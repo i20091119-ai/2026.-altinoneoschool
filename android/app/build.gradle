@@ -1,0 +1,75 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+
+// 빌드 번호(-PbuildNumber=<n>). CI가 실행번호를 넘기고, 로컬 빌드는 1.
+// ⚠ 반드시 여기서 변수로 계산해 둘 것 — defaultConfig 안에서
+//   `versionCode (식).toInteger()` 처럼 쓰면 Groovy가 `versionCode(식)` 호출로 파싱해
+//   그 반환값(null)에 메서드를 부르며 "Value is null" 로 빌드가 깨진다.
+def buildNo = (project.findProperty('buildNumber') ?: '1').toString().toInteger()
+
+android {
+    namespace 'saeon.altino.webctrl'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "saeon.altino.webctrl"
+        minSdk 23
+        // targetSdk 34: 안드로이드 12+ 에서 neverForLocation 이 실제 적용되어
+        // 위치 권한 없이 BLE 스캔이 정상 동작(부스 태블릿 스캔 0건 문제 해결).
+        targetSdk 34
+        versionCode buildNo
+        versionName "1.0.${buildNo}"
+    }
+
+    // ⚠ 고정 서명키 — 기기에 이미 깔린 앱 위에 '덮어쓰기 업데이트'가 되려면
+    // 모든 빌드의 서명이 같아야 한다. 기본 debug 서명은 CI 러너마다 키가 새로
+    // 생성되어 서명이 매번 달라지고, 그래서 지우고 다시 깔아야 했다.
+    signingConfigs {
+        altino {
+            storeFile file('altino.keystore')
+            storePassword 'altino2026'
+            keyAlias 'altino'
+            keyPassword 'altino2026'
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.altino
+        }
+        release {
+            signingConfig signingConfigs.altino
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core-ktx:1.13.1'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+}
+
+// 저장소 루트 webapp/ 를 빌드 시 assets/webapp 으로 동기화한다.
+// 두 벌을 손으로 맞추다 어긋나는 문제(드리프트)를 없애기 위함.
+// .ttf 원본은 용량이 커서 제외(런타임은 woff2 사용). dest 는 .gitignore 로 제외됨.
+tasks.register('syncWebapp', Sync) {
+    from("$rootDir/../webapp") {
+        exclude '**/*.ttf'
+    }
+    into "$projectDir/src/main/assets/webapp"
+}
+tasks.named('preBuild').configure { dependsOn 'syncWebapp' }
+// 에셋 병합 태스크가 반드시 동기화 이후에 실행되도록 보강(모든 변형).
+tasks.matching { it.name.startsWith('merge') && it.name.endsWith('Assets') }.configureEach {
+    dependsOn 'syncWebapp'
+}

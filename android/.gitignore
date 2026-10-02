@@ -1,0 +1,13 @@
+.gradle/
+build/
+app/build/
+local.properties
+*.iml
+.idea/
+.DS_Store
+captures/
+.externalNativeBuild/
+.cxx/
+
+# 빌드 시 syncWebapp 로 생성됨(webapp/ 원본에서 복사)
+app/src/main/assets/webapp/

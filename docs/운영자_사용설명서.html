@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<style>
+  @font-face{font-family:'Esamanru';src:url('esamanru-medium.woff2') format('woff2');font-weight:500}
+  @font-face{font-family:'Esamanru';src:url('esamanru-bold.woff2') format('woff2');font-weight:700}
+  @font-face{font-family:'Esamanru';src:url('esamanru-light.woff2') format('woff2');font-weight:300}
+  @page{size:A4;margin:11mm}
+  *{box-sizing:border-box}
+  body{font-family:'Esamanru',sans-serif;font-weight:500;color:#3a3230;margin:0}
+  h1{font-weight:700;font-size:20px;margin:0 0 2px}
+  .sub{color:#9b8f86;font-weight:300;font-size:11px;margin:0 0 8px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .card{border:2px solid #f0e6d8;border-radius:10px;padding:8px 11px;font-size:11px;line-height:1.55}
+  .card h2{font-size:12.5px;margin:0 0 4px;color:#fff;background:#5ea0ff;display:inline-block;padding:2px 8px;border-radius:6px}
+  .c2 h2{background:#37c9ad}.c3 h2{background:#ff7a86}.c4 h2{background:#b085ff}.c5 h2{background:#ffb23e;color:#5a3200}
+  ol{margin:4px 0 0 16px;padding:0}li{margin-bottom:2px}
+  b{font-weight:700}.hl{background:#fff3cf;border-radius:4px;padding:0 3px}
+  .full{grid-column:1/3}
+  .tip{background:#f6fbff;border:1px solid #d3e8ff;border-radius:8px;padding:6px 9px;font-size:10.5px;margin-top:6px}
+  .warn{background:#fff0f1;border:1px solid #ffc9cf;border-radius:8px;padding:6px 9px;font-size:10.5px}
+  code{background:#f3ece0;padding:0 4px;border-radius:4px}
+  .foot{color:#9b8f86;font-size:9.5px;font-weight:300;margin-top:6px;text-align:center}
+</style></head>
+<body>
+  <h1>수학SW체험활동 — 운영자(강사) 사용설명서</h1>
+  <p class="sub">경남수학문화관 · 갤럭시탭 SW체험 · 태블릿 1대 = 알티노 1대</p>
+
+  <div class="grid">
+    <div class="card full">
+      <h2>0. 준비 (처음 1회)</h2>
+      <ol>
+        <li>태블릿에 <b>알티노 컨트롤 APK</b> 설치(설정 → 출처를 알 수 없는 앱 허용).</li>
+        <li>태블릿 <b>[설정 → 블루투스]</b>에서 이 태블릿이 쓸 알티노를 <b>페어링</b>. (차 바닥 스티커 번호 예: <span class="hl">BD77</span> 확인) — 앱 안의 <b>[📶 설정]</b> 버튼으로 바로 이동 가능.</li>
+        <li>앱 실행 → 홈에서 <b>① 자율주행 코딩</b> / <b>② 수학 연료 꼬리잡기</b> 선택. (①은 <b>학생 활동지</b>+연필 준비)</li>
+      </ol>
+      <div class="tip">🔗 <b>연결</b>: 상단 [🔗] → 목록에서 스티커 번호로 검색·선택. 페어링된 알티노가 1대면 자동 연결. 연결이 끊기면 <b>자동 재연결</b>(3초). 🔋 값이 낮으면(빨강) 배터리 교체.</div>
+    </div>
+
+    <div class="card c2">
+      <h2>② 수학 연료 꼬리잡기 (도로 매트)</h2>
+      <ol>
+        <li>학년 선택(초1~중3).</li>
+        <li><b>충전소</b>에서 문제 풀기 → <b>에너지 +500</b>(≈30초 주행분) · 코인 +1.</li>
+        <li>에너지가 있는 동안만 D패드로 <b>운전</b>. 다 쓰면 다시 충전.</li>
+        <li>뒤에 다른 차가 붙으면 삐-+<b>잡힘</b>+에너지 감소.</li>
+        <li>코인으로 <b>속도업</b> 구매(330 → 360 → 390 → 420 → 450, 5단계).</li>
+        <li>산 단계 안에서는 상단 <b>속도 −/+</b> 로 코인 없이 오르내릴 수 있어요 — “너무 빨라서 못 잡겠어요” 대응.</li>
+        <li><b>↺ 잡힘만 0</b>: 에너지·코인·속도는 그대로 두고 잡힌 횟수만 되돌려요(같은 학생이 한 판 더).</li>
+        <li><b>새 판</b>: 모두 처음으로. 두 버튼 다 “정말 하시겠습니까?” 확인창이 떠요.</li>
+      </ol>
+      <b>🏆 가장 적게 잡힌 사람이 승리</b> (외부 타이머로 시간 관리).
+      <div class="tip">보정: 후면 임계값 기본 <b>50</b>. 너무 잘 걸리면 낮추고, 안 걸리면 살짝 올려요.</div>
+    </div>
+
+    <div class="card c3">
+      <h2>① 자율배송 코딩 (n자 코스·6단계)</h2>
+      <ol>
+        <li><b>①빛(수학)</b>: 밝은 곳·터널 안 🔆조도 <b>두 값 측정</b> → <span class="hl">터널 기준</span> 계산해 입력. → 터널 감지 기준.
+          <br><b>÷2 / ÷4 선택</b>: 기본은 <b>÷2</b>(두 값의 평균). 터널이 아닌데 자꾸 “터널!”로 걸리면 <b>÷4</b> 로 바꿔 기준을 더 어둡게 잡아요.
+          ÷4 는 평균이 아니므로 화면의 이름도 ‘터널 기준’으로 바뀌고, 활동지의 나눗셈 칸에도 <b>실제 고른 수</b>를 적게 해 주세요.
+          <br>⚠ 이 설정은 <b>태블릿에 저장</b>돼 다음 학생에게도 이어집니다. 기준이 너무 낮아 터널을 못 찾게 되는 조합이면 빨간 경고가 뜹니다.</li>
+        <li><b>②암호</b>: 학년(초3~고1, 8개) 문제 풀어 복구 코드.</li>
+        <li><b>③소리</b>: 반복 횟수 + 계이름 2개(터널 미션).</li>
+        <li><b>④배송지</b>: 표에서 문자(N/E/D/W/S) 확인.</li>
+        <li><b>⑤조립(코딩)</b>: <span class="hl">활동지에 쓴 숫자</span>를 블록 5개의 빈칸에 넣고 <b>실행 순서</b>대로 배치(조도→전진→장애물회피→소리→문자) → [조립 확인].</li>
+        <li><b>⑥출발!</b> 자동 벽추종 주행 → 터널 소리 🎵 → 도착 문자 표시.</li>
+      </ol>
+      <div class="tip"><b>주행이 이상할 때 제일 먼저</b>: ⑥실행 → [🔧벽추종 보정] → 맨 아래
+        <b>[↩️ 현장 기본값으로 되돌리기]</b>. 2026-09 파일럿에서 12대로 검증한 값
+        (정면 220 · 좌 650 · 우 210 · 회전 57)으로 한 번에 돌아갑니다.
+        <br>⚠ 보정값은 <b>태블릿마다 따로</b> 저장돼요. 앱을 <b>지우고 새로 설치</b>하면 날아갑니다
+        (그래서 업데이트는 [🔄 업데이트 확인]으로 덮어쓰는 게 안전해요).
+        <br>차가 <b>제자리에서 뱅뱅</b> 돌면 회전 세기를 낮추고, <b>벽에 부딪히면</b> 정면 감지거리를 키웁니다.
+        학생이 직접 고칠 수 있는 칸은 주행에 실패했을 때 ⑥ 화면에 자동으로 뜹니다.</div>
+    </div>
+
+    <div class="card c3">
+      <h2>심화 · 정밀 주차 챌린지</h2>
+      <p style="margin:4px 0">홈 화면 아래 <b>🅿️ 정밀 주차 챌린지</b> — 먼저 끝낸 친구를 위한 5분짜리 도전입니다.</p>
+      <ol>
+        <li>화면에 <b>목표 거리</b>가 뜹니다(90~200 중 무작위). 앞 벽까지의 거리예요 — <b>가까울수록 작은 수</b>.</li>
+        <li>▲▼ 를 <b>누르고 있는 동안</b> 차가 움직여요. 화면의 막대에서 🚗 를 🎯 에 맞추면 됩니다.
+          “▲ 조금 더 앞으로 — 42 남았어요” 처럼 <b>남은 거리를 숫자로</b> 알려 줍니다.</li>
+        <li>맞았다 싶으면 <b>[🅿️ 주차 완료 · 측정!]</b> — 그 자리의 실제 거리를 재요.</li>
+        <li><b>오차 = |목표 − 실제|</b> 를 학생이 직접 계산해 입력해야 점수가 나옵니다(이게 수학 부분).
+          오차 5 이하 ⭐⭐⭐ / 15 이하 ⭐⭐ / 30 이하 ⭐. 점수 = 100 − 오차.</li>
+        <li>[다음 도전 →] 을 누르면 새 목표가 나옵니다. 도전 횟수·최고 점수·최소 오차가 누적돼요.</li>
+      </ol>
+      <div class="tip">차가 잘 안 나가면: 출발 순간만 세게 밀도록 돼 있어요(바닥이 미끄러우면 살짝 튑니다).
+        그래도 안 가면 🔋 배터리를 먼저 확인하세요. 대기 줄이 길면 생략해도 됩니다 — 본 활동 둘과 독립이에요.</div>
+    </div>
+
+    <div class="card c4 full">
+      <h2>앱 업데이트 (지우고 다시 깔 필요 없음)</h2>
+      <div class="grid" style="gap:6px">
+        <div>• 홈 화면 오른쪽 아래 <b>[🔄 업데이트 확인]</b> → 새 버전이 있으면 받아서 그대로 덮어써요. <b>태블릿 자료는 지워지지 않습니다.</b></div>
+        <div>• 처음 한 번은 안드로이드가 “이 앱의 설치를 허용” 스위치를 켜라고 해요. 앱이 그 화면으로 안내하니, 켜고 <b>뒤로</b> 눌러 돌아와 다시 누르면 돼요.</div>
+        <div>• <b>태블릿이 와이파이에 연결</b>돼 있어야 해요(유선/학교 망은 GitHub 이 막혀 있을 수 있어요).</div>
+        <div>• 홈 화면 왼쪽 아래 <b>v1.0.xx</b> 가 지금 설치된 버전 — 12대가 같은 번호인지 눈으로 확인하세요.</div>
+      </div>
+    </div>
+
+    <div class="card c4 full">
+      <h2>문제 해결 (자주 묻는 것)</h2>
+      <div class="grid" style="gap:6px">
+        <div>• <b>목록에 알티노가 안 떠요</b> → [📶 설정]에서 먼저 페어링 → 앱으로 돌아와 [🔄 새로고침].</div>
+        <div>• <b>차가 안 움직여요</b> → 상단 🔗 연결됨 확인, 🔋 배터리 확인, (게임)에너지가 0인지 확인.</div>
+        <div>• <b>엉뚱한 차가 움직여요</b> → 🔗 → 이 태블릿의 스티커 번호로 다시 선택.</div>
+        <div>• <b>벽에 부딪혀요(코딩)</b> → 벽 감지 거리를 키우고 속도를 낮춰요.</div>
+        <div>• <b>소리가 안 나요(코딩)</b> → 차량 부저 음량/음계 코드 확인(강사 문의).</div>
+        <div>• <b>다음 학생</b> → 게임은 [새 판], 코딩은 [← 홈]에서 다시 시작.</div>
+        <div>• <b>같은 학생이 난이도만 바꿀 때</b> → 게임 안 [학년 바꾸기]. 그때만 코인·속도·잡힘이 이어져요(1분 안에 고르면).</div>
+        <div>• <b>터널을 못 찾고 계속 달려요(코딩)</b> → ①에서 ÷4 로 기준이 너무 낮아졌는지 확인. 빨간 경고가 떠 있으면 ÷2 로 되돌리세요.</div>
+        <div>• <b>도트매트릭스 숫자가 이상해요</b> → 게임 뷰어의 [🔢 도트매트릭스 방향 맞추기]. 현장 확정값은 <b>7번</b>이에요.</div>
+        <div>• <b>특정 차만 연결이 안 돼요</b> → 그 태블릿은 다른 차와 <b>짝</b>이 되어 있을 수 있어요.
+          12초 넘게 '재연결 중…'이면 앱이 짝지은 차 번호를 알려 줍니다 → [🔗 연결] → [🔓 짝 해제] 후 다시 선택.</div>
+        <div>• <b>뒤에 붙었는데 잡힌 횟수가 안 올라가요</b> → 그 차의 후면 센서 고장일 수 있어요.
+          8초 넘게 후면값이 한 숫자에 붙박이면 상단에 <b>⚠ 후면 센서 무반응</b> 이 뜹니다 → 차 교체.</div>
+        <div>• <b>자리마다 조도가 달라요</b> → 창가 자리는 빛이 세서 밝은 곳·터널 안 값이 붙습니다.
+          두 값 차이가 120 미만이면 ①에서 빨간 경고가 떠요 → 터널 <b>안쪽 깊숙이</b> 넣고 다시 측정.</div>
+      </div>
+    </div>
+
+    <div class="card c5 full">
+      <h2>안전</h2>
+      바퀴가 뜬 상태에서 <b>낮은 속도로 먼저</b> 방향 확인 → 정상이면 매트/트랙에 올려요. 주행 중 화면을 벗어나거나 앱을 가리면 <b>자동 정지</b>합니다.
+    </div>
+  </div>
+  <p class="foot">수학SW체험활동 · 경남수학문화관 · 값(임계·보정)은 실기에서 조정해 사용하세요</p>
+</body></html>
