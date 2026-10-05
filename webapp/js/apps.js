@@ -6,7 +6,7 @@
 // ready:false 인 앱은 로봇학교 화면에 '준비 중' 으로 흐리게 나온다.
 window.ALTINO_APPS = [
   { id: 't01', title: '로봇학교 입학식',        lessons: '1–2',   band: '입학하기', ready: false },
-  { id: 't02', title: '알티노 걸음마 가르치기',  lessons: '3–4',   band: '기초반',   ready: false },
+  { id: 't02', title: '알티노 걸음마 가르치기',  lessons: '3–4',   band: '기초반',   ready: true  },
   { id: 't03', title: '표정 만들기',            lessons: '5–6',   band: '기초반',   ready: false },
   { id: 't04', title: '노래 가르치기',          lessons: '7–8',   band: '기초반',   ready: false },
   { id: 't05', title: '비밀 신호 보내기',       lessons: '9–10',  band: '기초반',   ready: false },
