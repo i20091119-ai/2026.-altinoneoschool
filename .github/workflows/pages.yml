@@ -5,6 +5,8 @@ name: Deploy webapp to GitHub Pages
 
 on:
   push:
+    # 배포 환경(github-pages)은 main 만 허용 → 다른 브랜치에서는 돌리지 않음
+    branches: [main]
     paths:
       - "webapp/**"
       - ".github/workflows/pages.yml"
