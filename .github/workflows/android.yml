@@ -42,15 +42,21 @@ jobs:
         working-directory: android
         run: chmod +x gradlew
 
+      # 빌드 번호 = 1000 + 실행번호.
+      # 2026-10 저장소를 옮기며 실행번호가 1부터 다시 시작했다. 옛 저장소 빌드(v1.0.63 등)가 깔린 태블릿에
+      # 번호가 더 낮은 앱은 '다운그레이드'라 덮어 설치가 거부된다 → 옛 번호보다 항상 크게 1000 을 더한다(04 #44).
+      - name: Set build number
+        run: echo "BUILD_NO=$((1000 + ${{ github.run_number }}))" >> "$GITHUB_ENV"
+
       - name: Build debug APK
         working-directory: android
-        # buildNumber: 실행번호를 versionCode 로 사용 → 기기에서 '업데이트'로 인식됨
-        run: ./gradlew assembleDebug --no-daemon --stacktrace -PbuildNumber=${{ github.run_number }}
+        # buildNumber 를 versionCode 로 사용 → 기기에서 '업데이트'로 인식됨
+        run: ./gradlew assembleDebug --no-daemon --stacktrace -PbuildNumber=${BUILD_NO}
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: altino-webctrl-apk-v1.0.${{ github.run_number }}
+          name: altino-webctrl-apk-v1.0.${{ env.BUILD_NO }}
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
@@ -58,10 +64,11 @@ jobs:
       # 저장소가 공개라 태블릿은 로그인·토큰 없이 apk 를 받을 수 있다.
       # ⚠ 태그를 버전마다 새로 만든다(고정 태그면 URL이 같아 CDN이 옛 apk 를 캐시할 수 있음).
       - name: Publish GitHub Release
-        if: github.ref_name == 'claude/tablet-webapp-altino-control-l1pngm'
+        # main 에 합쳐진 빌드만 태블릿에 배포한다(다른 브랜치 빌드는 Artifacts 에만 — 시험용)
+        if: github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
-          RUN: ${{ github.run_number }}
+          RUN: ${{ env.BUILD_NO }}
         run: |
           set -e
           SRC=android/app/build/outputs/apk/debug/app-debug.apk

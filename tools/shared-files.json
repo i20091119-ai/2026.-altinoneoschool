@@ -1,7 +1,7 @@
 {
  "made": "2026-10-07",
  "files": {
-  ".github/workflows/android.yml": "3458ea005ec67b104004c2207dc6dbd16410da8288bdadce79e5a513c414ce77",
+  ".github/workflows/android.yml": "d9e27f9f788b5c35f8d1fe79f7a059a2da574dc05fb14d3194e28d7d365cb7b0",
   ".github/workflows/pages.yml": "a8a1d65738f654623ad4171b1bb2395eeb5dbdb90bb5b5854cba49174f255301",
   "android/.gitignore": "6428bc2311d94111b8fa1fe86f2fe0906d5ac9083d976f291ff8a36b78987880",
   "android/README.md": "df4427e9ea9b128192ef56d053b20926f75719a34c17919d9b4b7f5db609a8fc",
@@ -10,7 +10,7 @@
   "android/app/proguard-rules.pro": "3a3424f99fd90a6048026a659ec4977d03937fdbe40e3789ca602af5e662fd3c",
   "android/app/src/main/AndroidManifest.xml": "aaee1626e7615ae5ada4ecbaebe8a2af2f1a0735f4d7674faf444428963c974f",
   "android/app/src/main/java/saeon/altino/webctrl/AltinoBle.kt": "cb26ec7368de183100ece36ea889bf374c970edea19e448941723478dda5b968",
-  "android/app/src/main/java/saeon/altino/webctrl/AltinoUpdate.kt": "f2ef7d430eb5c57e32d2c0679b4455834c1e4f0f35526a3f642ddb1005a484a4",
+  "android/app/src/main/java/saeon/altino/webctrl/AltinoUpdate.kt": "2fd692fd862f747b9a6b236a3c338687ec1b1f03f1f83041828e43fc647a1ea7",
   "android/app/src/main/java/saeon/altino/webctrl/MainActivity.kt": "abb3c0e5fe9b32586f3d97ffb119f0705523d5521b30082bf16915a3df4bfe85",
   "android/app/src/main/res/mipmap-hdpi/ic_launcher.png": "079210bff199fe1c6e7e5ec6d0674b98eb85fe026c637fb702bd5abe9e08ca9a",
   "android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png": "079210bff199fe1c6e7e5ec6d0674b98eb85fe026c637fb702bd5abe9e08ca9a",
