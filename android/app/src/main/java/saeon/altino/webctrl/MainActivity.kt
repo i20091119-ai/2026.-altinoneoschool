@@ -90,7 +90,8 @@ class MainActivity : AppCompatActivity() {
         })
 
         requestBtPermsIfNeeded()
-        web.loadUrl("file:///android_asset/webapp/home.html")
+        // 시작 화면 = 알티노 로봇 학교(15개 주제 앱 목록). 체험관 홈은 학교 화면 오른쪽 위 링크로 간다.
+        web.loadUrl("file:///android_asset/webapp/school.html")
     }
 
     /** BLE 스캔에 필요한 런타임 권한 요청.
