@@ -40,7 +40,8 @@ class AltinoUpdate(
 ) {
     companion object {
         private const val TAG = "AltinoUpdate"
-        private const val REPO = "i20091119-ai/2026newaltinopro1"
+        // 2026-10 저장소 이전: 옛 저장소(2026newaltinopro1) → 지금 저장소. main 빌드가 여기 Release 로 올라온다
+        private const val REPO = "i20091119-ai/2026.-altinoneoschool"
         private const val API_LATEST = "https://api.github.com/repos/$REPO/releases/latest"
         private const val RELEASES_PAGE = "https://github.com/$REPO/releases/latest"
         private const val TIMEOUT = 15_000
