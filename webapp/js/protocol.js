@@ -70,8 +70,47 @@ function encodeMotor(v) {
   return [(raw >> 8) & 0xFF, raw & 0xFF];
 }
 
-// 상태 -> 26바이트 프레임 (Uint8Array). ConnectedThread.Sendbyte() 재현.
-function buildFrame(st) {
+// ── 기종: 알티노 네오(기본) / 알티노 라이트 ───────────────────────────────
+// 라이트는 같은 BLE(ISSC UART)지만 프레임이 다르다 — 오케스트라2 libapp.so(altinoLite.dart) 역컴파일로 확인(2026-10-08).
+//   보냄 22바이트: 02 10 chk 01 01 | 조향 | 모터A hi lo | 모터B hi lo | 표시 | 도트×8 | 소리 | LED(1바이트) | 03
+//   받음 22바이트: 02 .. .. 01 01 | IR1~6(각 2) | CDS(2) | BAT(2) | 03  — 로봇은 프레임을 받을 때마다 하나 답한다
+// 연결된 로봇 이름으로 정한다: ALTINO-L… = 라이트, 그 밖 = 네오. transport 가 연결 때 setModelFromName 을 부른다.
+let MODEL = 'neo';
+function modelFromName(name) { return /^ALTINO-L/i.test(String(name || '').trim()) ? 'lite' : 'neo'; }
+function setModel(m) { MODEL = (m === 'lite') ? 'lite' : 'neo'; }
+function setModelFromName(name) { setModel(modelFromName(name)); }
+function getModel() { return MODEL; }
+
+// 라이트 22바이트 프레임. checksum = sum(bytes[3..20]) & 0xFF (네오와 같은 방식, 범위만 다름)
+function buildLiteFrame(st) {
+  const b = new Uint8Array(22);
+  b[0] = 0x02;
+  b[1] = 0x10;            // CMD (라이트)
+  b[3] = 0x01;
+  b[4] = 0x01;            // 1 = 조종 프레임 (3 = 센서 요청, 오케스트라는 따로 보내지만 조종 프레임에도 답이 온다)
+  b[5] = st.steering & 0xFF;
+  const [a6, a7] = encodeMotor(st.motorA);
+  b[6] = a6; b[7] = a7;
+  const [b8, b9] = encodeMotor(st.motorB);
+  b[8] = b8; b[9] = b9;
+  if (st.displayMode === 0xFF) {
+    b[10] = 0xFF;
+    for (let i = 0; i < 8; i++) b[11 + i] = st.dot[i] & 0xFF;
+  } else {
+    b[10] = (st._brightness || 0) & 0xFF;
+  }
+  b[19] = st.sound & 0xFF;
+  b[20] = st.led & 0xFF;          // ⚠ 라이트 LED 는 1바이트 — 비트 뜻은 실측 전(네오 값의 하위 바이트를 그대로 보냄)
+  b[21] = 0x03;
+  let sum = 0;
+  for (let i = 3; i <= 20; i++) sum += b[i];
+  b[2] = sum & 0xFF;
+  return b;
+}
+
+// 상태 -> 프레임 (Uint8Array). 네오: 26바이트(ConnectedThread.Sendbyte() 재현), 라이트: 22바이트.
+function buildFrame(st, model) {
+  if ((model || MODEL) === 'lite') return buildLiteFrame(st);
   const b = new Uint8Array(26);
   b[0] = 0x02;            // STX
   b[1] = 0x14;            // CMD (20)
@@ -115,17 +154,30 @@ function parseSensorFrame(f) {
   };
 }
 
-// 바이트 스트림에서 54바이트 프레임을 뽑아내는 슬라이딩 파서
+// 라이트 수신 22바이트 프레임 (altinoLite.dart requestData 수신부 재현). 값은 signed 16bit(toInt16).
+function parseLiteFrame(f) {
+  if (!f || f.length < 22) return null;
+  if (f[0] !== 0x02 || f[3] !== 0x01 || f[4] !== 0x01 || f[21] !== 0x03) return null;
+  const s16 = (i) => { const v = ((f[i] & 0xFF) << 8) | (f[i + 1] & 0xFF); return v >= 0x8000 ? v - 0x10000 : v; };
+  return {
+    ir1: s16(5), ir2: s16(7), ir3: s16(9), ir4: s16(11), ir5: s16(13), ir6: s16(15),
+    cds: s16(17), battery: s16(19),
+  };
+}
+
+// 바이트 스트림에서 프레임을 뽑아내는 슬라이딩 파서 (네오 54바이트 / 라이트 22바이트 — 지금 기종 기준)
 class SensorFrameAssembler {
   constructor() { this.buf = []; }
   push(bytes) {
     const out = [];
     for (const byte of bytes) {
+      const lite = MODEL === 'lite';
+      const n = lite ? 22 : 54;
       this.buf.push(byte & 0xFF);
-      if (this.buf.length > 54) this.buf.shift();
-      if (this.buf.length === 54) {
+      while (this.buf.length > n) this.buf.shift();
+      if (this.buf.length === n) {
         const frame = Uint8Array.from(this.buf);
-        const s = parseSensorFrame(frame);
+        const s = lite ? parseLiteFrame(frame) : parseSensorFrame(frame);
         if (s) { out.push(s); this.buf = []; }
       }
     }
@@ -134,7 +186,8 @@ class SensorFrameAssembler {
 }
 
 const AltinoProtocol = {
-  AltinoState, buildFrame, parseSensorFrame, encodeMotor,
+  AltinoState, buildFrame, buildLiteFrame, parseSensorFrame, parseLiteFrame, encodeMotor,
+  modelFromName, setModel, setModelFromName, getModel,
   SensorFrameAssembler,
   toHex: (u8) => Array.from(u8).map(x => x.toString(16).padStart(2, '0')).join(' '),
 };

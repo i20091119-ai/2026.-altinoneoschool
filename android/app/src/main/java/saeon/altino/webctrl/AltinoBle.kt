@@ -45,7 +45,7 @@ import kotlin.random.Random
  *   connectTo(address)  특정 로봇에 연결(그 MAC으로 바인딩)
  *   getState()          {"connected":bool,"address":..,"name":..}  (페이지 진입 시 조회)
  *   unbind()            바인딩 해제 + 연결 종료(‘다른 로봇 선택’)
- *   sendFrame(b64):Boolean   26바이트 프레임(코얼레싱)
+ *   sendFrame(b64):Boolean   프레임(네오 26 / 라이트 22바이트, 코얼레싱, MTU 보다 크면 나눠 씀)
  *   disconnect()        수동 종료(자동 재연결 안 함)
  *   openBluetoothSettings()
  * 수신 notify → __altinoOnData(base64)
@@ -509,7 +509,9 @@ class AltinoBle(
                 val f = pendingFrame ?: return
                 val ch = writeCh ?: return
                 pendingFrame = null
-                Op.Write(ch, f)
+                val parts = chunks(f)
+                for (i in parts.size - 1 downTo 1) ops.addFirst(Op.Write(ch, parts[i]))
+                Op.Write(ch, parts[0])
             }
             busy = true
             armWatchdog(++opGen)
@@ -566,6 +568,17 @@ class AltinoBle(
         }
     }
 
+    // 한 번에 쓸 수 있는 크기(MTU-3)보다 큰 프레임은 나눠 쓴다.
+    // 알티노 라이트(22바이트)는 MTU 를 못 올리면 20바이트를 넘는다 — 오케스트라도 라이트 프레임을 14+8 로 나눠 쓴다
+    // (altinoLite.dart requestData). 네오(26바이트)는 MTU 185 가 잡혀 그대로 한 번에 간다.
+    private fun chunks(d: ByteArray): List<ByteArray> {
+        val max = negotiatedMtu - 3
+        if (d.size <= max) return listOf(d)
+        if (d.size == 22 && max >= 14) return listOf(d.copyOfRange(0, 14), d.copyOfRange(14, 22))
+        val n = maxOf(1, max)
+        return (d.indices step n).map { d.copyOfRange(it, minOf(it + n, d.size)) }
+    }
+
     // ---- 송신(코얼레싱: 최신 프레임만) ----
     @JavascriptInterface
     fun sendFrame(b64: String): Boolean {
@@ -574,7 +587,7 @@ class AltinoBle(
         synchronized(this) {
             if (gatt == null || writeCh == null || !isConnected) return false
             if (busy || ops.isNotEmpty()) { pendingFrame = data; return true }  // 미완료 → 슬롯 덮어쓰기
-            ops.addLast(Op.Write(writeCh!!, data))
+            for (part in chunks(data)) ops.addLast(Op.Write(writeCh!!, part))
         }
         pump()
         return true

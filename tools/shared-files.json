@@ -1,5 +1,5 @@
 {
- "made": "2026-10-07",
+ "made": "2026-10-08",
  "files": {
   ".github/workflows/android.yml": "d9e27f9f788b5c35f8d1fe79f7a059a2da574dc05fb14d3194e28d7d365cb7b0",
   ".github/workflows/pages.yml": "a8a1d65738f654623ad4171b1bb2395eeb5dbdb90bb5b5854cba49174f255301",
@@ -9,7 +9,7 @@
   "android/app/build.gradle": "fdebb65d98c4b377f89ae4238632d188f201e21ffd810221de653696e3e8ea79",
   "android/app/proguard-rules.pro": "3a3424f99fd90a6048026a659ec4977d03937fdbe40e3789ca602af5e662fd3c",
   "android/app/src/main/AndroidManifest.xml": "aaee1626e7615ae5ada4ecbaebe8a2af2f1a0735f4d7674faf444428963c974f",
-  "android/app/src/main/java/saeon/altino/webctrl/AltinoBle.kt": "cb26ec7368de183100ece36ea889bf374c970edea19e448941723478dda5b968",
+  "android/app/src/main/java/saeon/altino/webctrl/AltinoBle.kt": "dec578a33bfe4badb12e212f85b94bc8b59d470b8bc16735cf87a58b47786cdf",
   "android/app/src/main/java/saeon/altino/webctrl/AltinoUpdate.kt": "2fd692fd862f747b9a6b236a3c338687ec1b1f03f1f83041828e43fc647a1ea7",
   "android/app/src/main/java/saeon/altino/webctrl/MainActivity.kt": "abb3c0e5fe9b32586f3d97ffb119f0705523d5521b30082bf16915a3df4bfe85",
   "android/app/src/main/res/mipmap-hdpi/ic_launcher.png": "079210bff199fe1c6e7e5ec6d0674b98eb85fe026c637fb702bd5abe9e08ca9a",
@@ -57,10 +57,10 @@
   "webapp/js/kit.js": "7abc24c3a1b4a2901bbf8cad1c8e991d851da276c3e2a2265db389e86d29d7a5",
   "webapp/js/park.js": "9594aa2f6504735ce80054bca0de9a74ac16cc40f8d93f91806423a1be38b578",
   "webapp/js/problems.js": "2ba69abeeecfbd6cb23dc02a7b6663f0afe4f96b334f64776ac23d7155fec01d",
-  "webapp/js/protocol.js": "e13c63a1187c163f6c680abf97c69ac0838f06e11e201a026faff47ee72e1b9c",
+  "webapp/js/protocol.js": "047d7c65ce73acb2253bcec978b067f826e4bf8ff266c7d885d218b884f18e2e",
   "webapp/js/t00.js": "40adb8e06f16879bba91110fb38878f2e87351f7d2869532a9cd90e1ee8b874e",
   "webapp/js/tag.js": "1fc725df1e58919f2dc50ee95ce702d48becd16f560b09a53f467d6b295d073f",
-  "webapp/js/transport.js": "d4859f6fccbf9b09d10894cb13415e7b9eb5d7fa58cbe0ddf76da10129472dd0",
+  "webapp/js/transport.js": "014b51027f7e7fab396e00faf95ea420e99c497368d6a6259427aa9f65e51a80",
   "webapp/js/ui.js": "d8c71a560e139974b6e691fe66d09e6bbcac3446bc1f4705e266641414c0089c",
   "webapp/js/update.js": "fe431ec579860922849808b0f27fa9e100101bb4fc80cdf704a6f72c672add6e",
   "webapp/mode1.html": "3d2245af8d2441a0ee434534a0b180e9710e85f8998e52e9dc5616e8e914b13e",
