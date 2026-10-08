@@ -123,7 +123,7 @@ class AndroidBridgeTransport extends BaseTransport {
       const t = C._active; if (!t) return;
       // ⚠ 'scanning' · 'error:busy' 같은 진행중 알림까지 연결끊김으로 처리하면
       //   스스로 재연결 루프를 만든다. 확정 신호일 때만 connected 를 바꾼다.
-      if (s === 'connected') t.connected = true;
+      if (s === 'connected') { t.connected = true; t._syncModel(); }
       else if (s === 'disconnected' || s === 'error:no-bound' || s === 'error:location-off'
                || s === 'error:bt-off' || s === 'error:not-found') t.connected = false;
       t._emit('status', s);
@@ -166,8 +166,12 @@ class AndroidBridgeTransport extends BaseTransport {
   }
   // 네이티브 연결 상태 조회(페이지 이동해도 네이티브 GATT는 살아있음)
   state() { try { return JSON.parse(window.AltinoNative.getState() || '{}'); } catch (e) { return {}; } }
+  // 연결된 로봇 이름으로 기종(네오/라이트)을 정한다 — 프레임 모양이 다르다(protocol.js)
+  _syncModel() {
+    try { if (window.AltinoProtocol && window.AltinoProtocol.setModelFromName) window.AltinoProtocol.setModelFromName(this.state().name); } catch (e) {}
+  }
   // 이미 연결된 네이티브 링크를 '입양'(재연결 없이 콜백만 재바인딩)
-  adopt() { this._claim(); this.connected = true; this._emit('status', 'connected'); }
+  adopt() { this._claim(); this.connected = true; this._syncModel(); this._emit('status', 'connected'); }
   // 바인딩 해제('다른 로봇 선택')
   unbind() { try { if (window.AltinoNative.unbind) window.AltinoNative.unbind(); } catch (e) {} this.connected = false; }
   async connectTo(address) { // 특정 MAC으로 연결(다중 기기 선택)
