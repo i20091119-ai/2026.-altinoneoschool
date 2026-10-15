@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>t11 순서대로 기억시키기 — 알티노 로봇 학교</title>
+<style>
+  /* ★ 공통 스타일 */
+  @font-face{font-family:'Esamanru';src:url('fonts/esamanru-light.woff2') format('woff2');font-weight:300;font-display:swap}
+  @font-face{font-family:'Esamanru';src:url('fonts/esamanru-medium.woff2') format('woff2');font-weight:500;font-display:swap}
+  @font-face{font-family:'Esamanru';src:url('fonts/esamanru-bold.woff2') format('woff2');font-weight:700;font-display:swap}
+  :root{--cream:#fff7ea;--ink:#3a3230;--mut:#9b8f86;--mint:#37c9ad;--sun:#ffb23e;--coral:#ff7a86;--blue:#5ea0ff;--grape:#b085ff;--line:#f0e6d8;--card:#fff;--shadow:0 8px 24px rgba(120,90,50,.12);--r:20px}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;margin:0}
+  body{font-family:'Esamanru','Pretendard',system-ui,sans-serif;font-weight:500;color:var(--ink);
+    background:linear-gradient(rgba(255,247,234,.55),rgba(255,247,234,.55)), url('assets/bg.png') center/cover no-repeat, var(--cream);
+    height:100vh;overflow:hidden;user-select:none;padding:10px 16px;display:flex;flex-direction:column;gap:8px}
+  h1,h2,b{font-weight:700}
+  .hidden{display:none !important}
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .topbar a{color:var(--blue);text-decoration:none;font-size:1.05rem}
+  .btn{border:0;border-radius:16px;font-family:inherit;font-size:1.05rem;padding:12px 18px;cursor:pointer;background:var(--blue);color:#fff;box-shadow:var(--shadow)}
+  .btn:active{transform:translateY(2px)}.btn.ghost{background:#fff;color:var(--ink);border:2px solid var(--line);box-shadow:none}
+  .btn.mint{background:var(--mint)}.btn.coral{background:var(--coral)}.btn.sun{background:var(--sun);color:#5a3200}.btn:disabled{opacity:.45}
+  /* ⚠ 카드는 overflow:hidden (12 문서 S3) */
+  .stage{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .card{background:var(--card);border:2px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);
+    padding:12px 16px;overflow:hidden;min-height:0;display:flex;flex-direction:column;gap:8px}
+  .card h2{margin:0;font-size:1.05rem}
+  .lead{color:var(--mut);font-size:.88rem;margin:0}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  /* ✎ t11 화면 */
+  .steps{display:flex;gap:8px}
+  .steps button{flex:1;border:2px solid var(--line);background:#fff;border-radius:14px;padding:9px 0;font-family:inherit;font-size:1.02rem;color:var(--mut);cursor:pointer}
+  .steps button.on{background:var(--mint);border-color:var(--mint);color:#fff}
+  .page{display:contents}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chips button{flex:1;min-width:72px;min-height:52px;border-radius:14px;border:2px solid var(--line);background:#fff;font-family:inherit;font-size:1.05rem;cursor:pointer}
+  .chips button.on{border-color:var(--blue);background:var(--blue);color:#fff}
+  .say{text-align:center;font-size:1.05rem;margin:0}
+  .fb{text-align:center;font-size:1.05rem;min-height:1.4em;margin:0}
+  .fb.ok{color:#1b8f6a}.fb.no{color:#d0505d}
+  .palette{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .palette button{min-height:64px;border-radius:16px;border:2px solid var(--line);background:#fff;font-family:inherit;font-size:1rem;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:var(--shadow)}
+  .palette button b{font-size:1.7rem;line-height:1}
+  .strip{display:flex;flex-wrap:wrap;gap:6px;min-height:66px;padding:8px;border-radius:14px;background:var(--cream);border:2px dashed var(--line);align-content:flex-start}
+  .strip button{width:50px;height:50px;border-radius:12px;border:2px solid var(--line);background:#fff;font-size:1.6rem;font-family:inherit;position:relative;cursor:pointer}
+  .strip button.sel{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue) inset}
+  .strip button.now{background:var(--sun);color:#fff;border-color:var(--sun)}
+  .strip button.done{background:#e6faf5}
+  .strip button i{position:absolute;top:1px;left:4px;font-size:.6rem;color:var(--mut);font-style:normal}
+  .strip .empty{color:var(--mut);font-size:.9rem;align-self:center}
+  .acts{display:flex;gap:6px;flex-wrap:wrap}
+  .acts button{flex:1;min-height:48px;border-radius:12px;border:2px solid var(--line);background:#fff;font-family:inherit;font-size:.95rem}
+  .acts button:disabled{opacity:.4}
+  .map{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;flex:1;min-height:0;max-height:360px;aspect-ratio:5/4;margin:0 auto;width:100%;max-width:450px}
+  .map div{border-radius:10px;background:#fff;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:1.5rem;position:relative}
+  .map div.trail{background:#e6faf5}
+  .map div.start{border-color:var(--blue)}
+  .map div.goal{border-color:var(--sun);background:#fff3dc}
+  .map .bot{font-size:2rem;color:var(--blue);transition:transform .25s;display:inline-block;line-height:1}
+  .map .tag{position:absolute;bottom:1px;font-size:.62rem;color:var(--mut)}
+  .chips button.done::after{content:' ✓';color:var(--mint)}
+  .chips button.on.done::after{color:#fff}
+  table{border-collapse:collapse;width:100%;font-size:.95rem}
+  th,td{border:2px solid var(--line);padding:5px;text-align:center}
+  th{background:#fffaf1;color:var(--mut);font-weight:500}
+  .stepper{display:flex;align-items:center;gap:8px;justify-content:center}
+  .stepper button{width:58px;height:52px;font-size:1.5rem;border-radius:12px;border:2px solid var(--line);background:#fff;font-family:inherit}
+  .stepper b{font-size:1.6rem;min-width:3.4ch;text-align:center}
+  .judge{display:flex;gap:10px;justify-content:center}
+  .big{font-size:1.15rem;padding:13px 20px}
+</style>
+</head>
+<body>
+
+<!-- ★ 상단바 -->
+<div class="topbar">
+  <div class="row">
+    <a href="school.html">← 로봇학교</a>
+    <h1 style="margin:0;font-size:1.25rem">🧩 순서대로 기억시키기 <span class="lead" style="display:inline">21–22차시 · 순서와 되풀이 규칙</span></h1>
+  </div>
+  <div id="kitBar"></div>
+</div>
+
+<!-- ✎ 단계 표시 — PPT·활동지의 활동 이름과 같다 -->
+<div class="steps" id="steps">
+  <button data-step="1">① 사람 로봇 놀이</button>
+  <button data-step="2">② 블록으로 기억시키기</button>
+  <button data-step="3">③ 버그 고치기 미션</button>
+</div>
+
+<div class="stage">
+
+  <!-- ① 사람 로봇 놀이 — 로봇은 움직이지 않는다 -->
+  <div class="page" data-page="1">
+    <section class="card">
+      <h2>🗺 격자 코스 <span class="lead" style="display:inline">— 로봇 역할 친구는 카드대로만 움직여요</span></h2>
+      <div class="chips" id="goal1Chips"></div>
+      <div class="map" id="map1"></div>
+      <p class="say" id="say1"></p>
+    </section>
+    <section class="card">
+      <h2>🃏 명령 카드 놓기</h2>
+      <div class="palette" id="pal1"></div>
+      <div class="strip" id="strip1"></div>
+      <div class="acts" id="acts1"></div>
+      <div class="row" style="justify-content:center">
+        <button id="read1" class="btn mint big">📣 한 장씩 읽기</button>
+        <button id="rewind1" class="btn ghost">처음 자리로</button>
+        <button id="rec1" class="btn" disabled>📝 기록하기</button>
+      </div>
+      <table id="tab1"></table>
+    </section>
+  </div>
+
+  <!-- ② 블록으로 기억시키기 · ③ 버그 고치기 미션 (같은 화면, ③ 은 미션 카드가 보인다) -->
+  <div class="page hidden" data-page="2">
+    <section class="card">
+      <h2 id="edTitle">🧱 블록을 순서대로 놓아요</h2>
+      <div class="chips hidden" id="missionChips"></div>
+      <div class="palette" id="pal2"></div>
+      <div class="strip" id="strip2"></div>
+      <div class="acts" id="acts2"></div>
+      <div class="row" style="justify-content:center">
+        <button id="run2" class="btn mint big">▶ 알티노 실행</button>
+        <button id="sim2" class="btn ghost">👀 화면에서 해 보기</button>
+        <button id="stop2" class="btn coral big hidden">■ 멈춰</button>
+      </div>
+      <p class="fb" id="fb2"></p>
+      <div class="judge hidden" id="judge2">
+        <button id="judgeOk" class="btn mint">⭕ 도착했어요</button><button id="judgeNo" class="btn coral">❌ 못 갔어요</button>
+      </div>
+    </section>
+    <section class="card">
+      <div id="mapView" style="display:flex;flex-direction:column;gap:8px;flex:1;min-height:0">
+        <div class="row" style="justify-content:space-between"><h2 id="mapTitle">🗺 출발점 → 도착점</h2><button id="calOpen" class="btn ghost">📏 한 칸 맞추기</button></div>
+        <div class="map" id="map2"></div>
+        <p class="say" id="say2"></p>
+        <table id="tab3" class="hidden"></table>
+      </div>
+      <div id="calView" class="hidden" style="display:flex;flex-direction:column;gap:10px;flex:1">
+        <h2>📏 한 칸 맞추기 — 내 알티노의 한 칸과 돌기</h2>
+        <p class="lead">알티노는 바퀴가 몇 바퀴 돌았는지 모르고 <b>시간</b>으로 움직여요. 그래서 로봇마다 한 칸이 조금씩 달라요.</p>
+        <p class="say">↑ 한 칸 시간</p>
+        <div class="stepper"><button id="cellMinus">−</button><b id="cellVal">1.0초</b><button id="cellPlus">+</button><button id="cellTry" class="btn">↑ 한 칸 해 보기</button></div>
+        <p class="say">← → 돌기 시간 <span class="lead">(앞으로 꺾고 뒤로 꺾어 제자리 가까이 돌아요)</span></p>
+        <div class="stepper"><button id="turnMinus">−</button><b id="turnVal">0.70초</b><button id="turnPlus">+</button><button id="turnTry" class="btn">→ 돌기 해 보기</button></div>
+        <p class="lead">한 칸보다 덜 가면 + , 더 가면 − . 돌기가 덜 돌면 + , 더 돌면 − . 이 태블릿에 저장돼요.</p>
+        <div class="row" style="justify-content:center;margin-top:auto"><button id="calStop" class="btn coral">■ 멈춰</button><button id="calClose" class="btn">지도 보기 →</button></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ★ 스크립트 순서 고정 -->
+<script src="js/protocol.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/dotmatrix.js"></script>
+<script src="js/transport.js"></script>
+<script src="js/kit.js"></script>
+<script src="js/t11.js"></script>
+</body>
+</html>
