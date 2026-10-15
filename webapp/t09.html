@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>t09 어둠 알아채기 — 알티노 로봇 학교</title>
+<style>
+  /* ★ 공통 스타일 */
+  @font-face{font-family:'Esamanru';src:url('fonts/esamanru-light.woff2') format('woff2');font-weight:300;font-display:swap}
+  @font-face{font-family:'Esamanru';src:url('fonts/esamanru-medium.woff2') format('woff2');font-weight:500;font-display:swap}
+  @font-face{font-family:'Esamanru';src:url('fonts/esamanru-bold.woff2') format('woff2');font-weight:700;font-display:swap}
+  :root{--cream:#fff7ea;--ink:#3a3230;--mut:#9b8f86;--mint:#37c9ad;--sun:#ffb23e;--coral:#ff7a86;--blue:#5ea0ff;--grape:#b085ff;--line:#f0e6d8;--card:#fff;--shadow:0 8px 24px rgba(120,90,50,.12);--r:20px}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;margin:0}
+  body{font-family:'Esamanru','Pretendard',system-ui,sans-serif;font-weight:500;color:var(--ink);
+    background:linear-gradient(rgba(255,247,234,.55),rgba(255,247,234,.55)), url('assets/bg.png') center/cover no-repeat, var(--cream);
+    height:100vh;overflow:hidden;user-select:none;padding:10px 16px;display:flex;flex-direction:column;gap:8px}
+  h1,h2,b{font-weight:700}
+  .hidden{display:none !important}
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .topbar a{color:var(--blue);text-decoration:none;font-size:1.05rem}
+  .btn{border:0;border-radius:16px;font-family:inherit;font-size:1.05rem;padding:12px 18px;cursor:pointer;background:var(--blue);color:#fff;box-shadow:var(--shadow)}
+  .btn:active{transform:translateY(2px)}.btn.ghost{background:#fff;color:var(--ink);border:2px solid var(--line);box-shadow:none}
+  .btn.mint{background:var(--mint)}.btn.coral{background:var(--coral)}.btn.sun{background:var(--sun);color:#5a3200}.btn:disabled{opacity:.45}
+  /* ⚠ 카드는 overflow:hidden (12 문서 S3) */
+  .stage{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .card{background:var(--card);border:2px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);
+    padding:12px 16px;overflow:hidden;min-height:0;display:flex;flex-direction:column;gap:8px}
+  .card h2{margin:0;font-size:1.05rem}
+  .lead{color:var(--mut);font-size:.88rem;margin:0}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  /* ✎ t09 화면 */
+  .steps{display:flex;gap:8px}
+  .steps button{flex:1;border:2px solid var(--line);background:#fff;border-radius:14px;padding:9px 0;font-family:inherit;font-size:1.02rem;color:var(--mut);cursor:pointer}
+  .steps button.on{background:var(--mint);border-color:var(--mint);color:#fff}
+  .page{display:contents}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chips button{flex:1;min-width:72px;min-height:52px;border-radius:14px;border:2px solid var(--line);background:#fff;font-family:inherit;font-size:1.05rem;cursor:pointer}
+  .chips button.on{border-color:var(--blue);background:var(--blue);color:#fff}
+  .say{text-align:center;font-size:1.1rem;margin:0}
+  .fb{text-align:center;font-size:1.1rem;min-height:1.4em;margin:0}
+  .fb.ok{color:#1b8f6a}.fb.no{color:#d0505d}
+  .meter{display:flex;align-items:baseline;justify-content:center;gap:10px}
+  .meter b{font-size:4rem;font-variant-numeric:tabular-nums;line-height:1}
+  .live{flex:1;min-height:0;position:relative;border-left:2px solid var(--line);border-bottom:2px solid var(--line);margin:0 4px 0 44px}
+  .live canvas{position:absolute;inset:0;width:100%;height:100%}
+  .live .yl{position:absolute;left:-44px;font-size:.8rem;color:var(--mut);transform:translateY(-50%)}
+  table{border-collapse:collapse;width:100%;font-size:1rem}
+  th,td{border:2px solid var(--line);padding:6px;text-align:center}
+  th{background:#fffaf1;color:var(--mut);font-weight:500}
+  tr.on td{background:#fff3dc}
+  td.big{font-weight:700;color:var(--mint)}
+  .chart{flex:1;min-height:0;display:flex;align-items:flex-end;gap:16px;padding:0 10px;border-left:2px solid var(--line);border-bottom:2px solid var(--line);margin-left:44px;position:relative;
+    background:repeating-linear-gradient(to top,transparent 0,transparent calc(12.5% - 1px),var(--line) calc(12.5% - 1px),var(--line) 12.5%)}
+  .chart .yl{position:absolute;left:-44px;font-size:.8rem;color:var(--mut);transform:translateY(50%)}
+  .col{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
+  .bar{width:60%;background:var(--blue);border-radius:8px 8px 0 0;color:#fff;font-size:.9rem;display:flex;justify-content:center;padding-top:2px;min-height:0}
+  .xl{display:flex;gap:16px;padding:0 10px;margin-left:44px}
+  .xl span{flex:1;text-align:center;font-size:.9rem;color:var(--mut)}
+  .calc{font-size:1.25rem;text-align:center;background:var(--cream);border-radius:14px;padding:10px}
+  .lamp{font-size:3.6rem;text-align:center;line-height:1;filter:grayscale(1);opacity:.35;transition:all .2s}
+  .lamp.on{filter:none;opacity:1}
+  .hint{background:#fff3dc;border:2px solid var(--sun);border-radius:14px;padding:8px 12px;font-size:1rem}
+  .pad2{display:flex;gap:10px;justify-content:center}
+  .pad2 button{width:110px;height:76px;font-size:1.8rem;border-radius:18px;border:2px solid var(--line);background:#fff;box-shadow:var(--shadow);font-family:inherit}
+  .pad2 button.pressed{background:var(--mint);color:#fff;transform:translateY(2px)}
+</style>
+</head>
+<body>
+
+<!-- ★ 상단바 -->
+<div class="topbar">
+  <div class="row">
+    <a href="school.html">← 로봇학교</a>
+    <h1 style="margin:0;font-size:1.25rem">🌙 어둠 알아채기 <span class="lead" style="display:inline">17–18차시 · 조도 센서와 막대그래프</span></h1>
+  </div>
+  <div id="kitBar"></div>
+</div>
+
+<!-- ✎ 단계 표시 — PPT·활동지의 활동 이름과 같다 -->
+<div class="steps" id="steps">
+  <button data-step="1">① 알티노의 눈 찾기</button>
+  <button data-step="2">② 밝기 그래프 그리기</button>
+  <button data-step="3">③ 터널 실험</button>
+</div>
+
+<div class="stage">
+
+  <!-- ① 알티노의 눈 찾기 -->
+  <div class="page" data-page="1">
+    <section class="card">
+      <h2>👀 지금 밝기 <span class="lead" style="display:inline">(밝을수록 커요)</span></h2>
+      <div class="meter"><b id="cdsNow">–</b><span class="lead">10 단위</span></div>
+      <div class="live" id="live"><canvas id="liveCv"></canvas></div>
+      <p class="lead" style="text-align:center">최근 10초 밝기 그래프 — 손으로 가리면 어떻게 바뀔까요?</p>
+    </section>
+    <section class="card">
+      <h2>✋ 가린 곳을 고르고 재요 <span class="lead" style="display:inline">(활동지 1번)</span></h2>
+      <div class="chips" id="spotChips"></div>
+      <div class="row" style="justify-content:center">
+        <button id="eyeBefore" class="btn">① 가리기 전 재기</button>
+        <button id="eyeAfter" class="btn sun" disabled>② 2초 가리고 재기</button>
+      </div>
+      <p class="fb" id="eyeFb"></p>
+      <table id="eyeTable"></table>
+      <p class="say" id="eyeSum"></p>
+    </section>
+  </div>
+
+  <!-- ② 밝기 그래프 그리기 -->
+  <div class="page hidden" data-page="2">
+    <section class="card">
+      <h2>📍 장소를 고르고 밝기를 재요</h2>
+      <div class="chips" id="placeChips"></div>
+      <div class="meter"><b id="cdsNow2">–</b><span class="lead">지금 밝기</span></div>
+      <div class="row" style="justify-content:center"><button id="placeMeasure" class="btn mint" style="font-size:1.2rem">📏 여기 밝기 재기</button></div>
+      <p class="lead" style="text-align:center">2초 동안 잰 값을 10 단위로 어림해요. 알티노는 두 손으로 들고 옮겨요.</p>
+      <table id="placeTable"></table>
+    </section>
+    <section class="card">
+      <h2>📊 장소별 밝기 막대그래프 <span class="lead" style="display:inline">(눈금 한 칸 = 100)</span></h2>
+      <div class="chart" id="chart"></div>
+      <div class="xl" id="xl"></div>
+      <p class="say" id="chartSay">네 곳을 재면 가장 밝은 곳과 어두운 곳을 알려 줘요.</p>
+      <div class="row" style="justify-content:flex-end"><button id="placeReset" class="btn ghost">처음부터</button></div>
+    </section>
+  </div>
+
+  <!-- ③ 터널 실험 -->
+  <div class="page hidden" data-page="3">
+    <section class="card">
+      <h2>🚇 터널 밖·안 밝기로 기준 만들기</h2>
+      <div class="meter"><b id="cdsNow3">–</b><span class="lead">지금 밝기</span></div>
+      <div class="row" style="justify-content:center">
+        <button id="tunOut" class="btn">☀️ 터널 밖 재기</button>
+        <button id="tunIn" class="btn" style="background:var(--grape)">🌑 터널 안 재기</button>
+      </div>
+      <table id="tunTable"></table>
+      <div class="calc" id="calc">밖과 안을 재면 가운데 값을 계산해요.</div>
+      <div class="hint hidden" id="gapWarn"></div>
+    </section>
+    <section class="card">
+      <h2>💡 자동 라이트 — 기준보다 어두우면 켜져요</h2>
+      <div class="lamp" id="lamp">💡</div>
+      <p class="say" id="autoSay">기준을 만들면 켤 수 있어요.</p>
+      <div class="row" style="justify-content:center">
+        <button id="autoOn" class="btn mint" disabled>▶ 자동 라이트 켜기</button>
+        <button id="autoOff" class="btn coral hidden">■ 멈춰</button>
+      </div>
+      <p class="lead" style="text-align:center">알티노를 천천히 터널로 — 누르는 동안만 움직여요</p>
+      <div class="pad2"><button id="d-up">▲</button><button id="d-down">▼</button></div>
+      <p class="say" id="lightCount"></p>
+    </section>
+  </div>
+</div>
+
+<!-- ★ 스크립트 순서 고정 -->
+<script src="js/protocol.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/dotmatrix.js"></script>
+<script src="js/transport.js"></script>
+<script src="js/kit.js"></script>
+<script src="js/t09.js"></script>
+</body>
+</html>

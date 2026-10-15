@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>t10 스스로 멈추는 차의 비밀 — 알티노 로봇 학교</title>
+<style>
+  /* ★ 공통 스타일 */
+  @font-face{font-family:'Esamanru';src:url('fonts/esamanru-light.woff2') format('woff2');font-weight:300;font-display:swap}
+  @font-face{font-family:'Esamanru';src:url('fonts/esamanru-medium.woff2') format('woff2');font-weight:500;font-display:swap}
+  @font-face{font-family:'Esamanru';src:url('fonts/esamanru-bold.woff2') format('woff2');font-weight:700;font-display:swap}
+  :root{--cream:#fff7ea;--ink:#3a3230;--mut:#9b8f86;--mint:#37c9ad;--sun:#ffb23e;--coral:#ff7a86;--blue:#5ea0ff;--grape:#b085ff;--line:#f0e6d8;--card:#fff;--shadow:0 8px 24px rgba(120,90,50,.12);--r:20px}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;margin:0}
+  body{font-family:'Esamanru','Pretendard',system-ui,sans-serif;font-weight:500;color:var(--ink);
+    background:linear-gradient(rgba(255,247,234,.55),rgba(255,247,234,.55)), url('assets/bg.png') center/cover no-repeat, var(--cream);
+    height:100vh;overflow:hidden;user-select:none;padding:10px 16px;display:flex;flex-direction:column;gap:8px}
+  h1,h2,b{font-weight:700}
+  .hidden{display:none !important}
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .topbar a{color:var(--blue);text-decoration:none;font-size:1.05rem}
+  .btn{border:0;border-radius:16px;font-family:inherit;font-size:1.05rem;padding:12px 18px;cursor:pointer;background:var(--blue);color:#fff;box-shadow:var(--shadow)}
+  .btn:active{transform:translateY(2px)}.btn.ghost{background:#fff;color:var(--ink);border:2px solid var(--line);box-shadow:none}
+  .btn.mint{background:var(--mint)}.btn.coral{background:var(--coral)}.btn.sun{background:var(--sun);color:#5a3200}.btn:disabled{opacity:.45}
+  /* ⚠ 카드는 overflow:hidden (12 문서 S3) */
+  .stage{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .card{background:var(--card);border:2px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);
+    padding:12px 16px;overflow:hidden;min-height:0;display:flex;flex-direction:column;gap:8px}
+  .card h2{margin:0;font-size:1.05rem}
+  .lead{color:var(--mut);font-size:.88rem;margin:0}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  /* ✎ t10 화면 */
+  .steps{display:flex;gap:8px}
+  .steps button{flex:1;border:2px solid var(--line);background:#fff;border-radius:14px;padding:9px 0;font-family:inherit;font-size:1.02rem;color:var(--mut);cursor:pointer}
+  .steps button.on{background:var(--mint);border-color:var(--mint);color:#fff}
+  .page{display:contents}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chips button{flex:1;min-width:72px;min-height:52px;border-radius:14px;border:2px solid var(--line);background:#fff;font-family:inherit;font-size:1.05rem;cursor:pointer}
+  .chips button.on{border-color:var(--blue);background:var(--blue);color:#fff}
+  .say{text-align:center;font-size:1.1rem;margin:0}
+  .fb{text-align:center;font-size:1.1rem;min-height:1.4em;margin:0}
+  .fb.ok{color:#1b8f6a}.fb.no{color:#d0505d}
+  .roles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .roles div{border:3px solid var(--line);border-radius:18px;padding:12px 6px;text-align:center;display:flex;flex-direction:column;gap:4px}
+  .roles .m{font-size:2.6rem}
+  .roles b{font-size:1.3rem}
+  .roles .who{font-size:1.1rem;color:var(--blue)}
+  .flow{display:flex;align-items:center;justify-content:center;gap:8px;font-size:1.05rem}
+  .flow span{background:var(--cream);border-radius:12px;padding:8px 12px}
+  .think{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;flex:1;min-height:0}
+  .think div{border:2px solid var(--line);border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:8px;text-align:center}
+  .think .v{font-size:2.6rem;font-weight:700;font-variant-numeric:tabular-nums}
+  .think .stop{color:var(--coral)}.think .go{color:var(--mint)}
+  .meter{display:flex;align-items:baseline;justify-content:center;gap:10px}
+  .meter b{font-size:4.4rem;font-variant-numeric:tabular-nums;line-height:1}
+  .gauge{height:30px;border-radius:999px;background:var(--cream);border:2px solid var(--line);position:relative;overflow:hidden}
+  .gauge i{position:absolute;left:0;top:0;bottom:0;background:var(--blue);border-radius:999px}
+  .gl{display:flex;justify-content:space-between;font-size:.85rem;color:var(--mut)}
+  table{border-collapse:collapse;width:100%;font-size:1rem}
+  th,td{border:2px solid var(--line);padding:6px;text-align:center}
+  th{background:#fffaf1;color:var(--mut);font-weight:500}
+  tr.on td{background:#fff3dc}
+  .clock{font-size:2rem;font-weight:700;text-align:center}
+  .len{display:flex;gap:8px;align-items:center;justify-content:center;font-size:1.2rem}
+  .len input{font-family:inherit;font-size:1.6rem;width:90px;padding:6px 10px;border-radius:12px;border:3px solid var(--line);text-align:center}
+  .big{font-size:1.25rem;padding:14px 22px}
+</style>
+</head>
+<body>
+
+<!-- ★ 상단바 -->
+<div class="topbar">
+  <div class="row">
+    <a href="school.html">← 로봇학교</a>
+    <h1 style="margin:0;font-size:1.25rem">🛑 스스로 멈추는 차의 비밀 <span class="lead" style="display:inline">19–20차시 · 적외선 센서와 길이 재기</span></h1>
+  </div>
+  <div id="kitBar"></div>
+</div>
+
+<!-- ✎ 단계 표시 — PPT·활동지의 활동 이름과 같다 -->
+<div class="steps" id="steps">
+  <button data-step="1">① 사람 센서 놀이</button>
+  <button data-step="2">② 센서 숫자 관찰</button>
+  <button data-step="3">③ 긴급 제동 실험</button>
+</div>
+
+<div class="stage">
+
+  <!-- ① 사람 센서 놀이 -->
+  <div class="page" data-page="1">
+    <section class="card">
+      <h2>🙋 세 명이 역할을 맡아요 <span class="lead" style="display:inline" id="roundNo"></span></h2>
+      <div class="roles" id="roles"></div>
+      <div class="flow"><span>👀 눈 = 입력</span>→<span>🧠 머리 = 판단</span>→<span>🦶 발 = 출력</span></div>
+      <div class="row" style="justify-content:center"><button id="swapRole" class="btn big">🔄 역할 바꾸기</button></div>
+      <p class="lead" style="text-align:center">걷는 속도로만 움직이고, '멈춰!'를 들으면 바로 멈춰요.</p>
+    </section>
+    <section class="card">
+      <h2>🤖 알티노라면? <span class="lead" style="display:inline">— 책을 알티노 앞에 가져가 봐요 (움직이지 않아요)</span></h2>
+      <div class="think">
+        <div><span>👀 눈 · 적외선 센서</span><span class="v" id="tEye">–</span><span class="lead">앞까지 거리 숫자</span></div>
+        <div><span>🧠 머리 · 판단</span><span class="v" id="tHead">–</span><span class="lead">220보다 작으면 가깝다!</span></div>
+        <div><span>🦶 발 · 바퀴</span><span class="v" id="tFoot">–</span><span class="lead">멈춤 / 달림</span></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ② 센서 숫자 관찰 -->
+  <div class="page hidden" data-page="2">
+    <section class="card">
+      <h2>🔦 앞쪽 센서 숫자</h2>
+      <div class="meter"><b id="irNow">–</b></div>
+      <p class="say">숫자가 <b>작을수록 가까워요</b></p>
+      <div class="gauge"><i id="gauge"></i></div>
+      <div class="gl"><span>가까움 0</span><span>멀어요 1300</span></div>
+      <p class="lead">자의 0 눈금을 알티노 앞 끝에 맞추고, 책을 놓은 뒤 기록해요.</p>
+    </section>
+    <section class="card">
+      <h2>📏 거리마다 숫자 기록 <span class="lead" style="display:inline">(활동지 2번)</span></h2>
+      <div class="chips" id="distChips"></div>
+      <div class="row" style="justify-content:center"><button id="distRec" class="btn mint big">📝 숫자 기록하기</button></div>
+      <table id="distTable"></table>
+      <p class="say" id="distSay"></p>
+      <div class="row" style="justify-content:flex-end;margin-top:auto"><button id="distReset" class="btn ghost">처음부터</button></div>
+    </section>
+  </div>
+
+  <!-- ③ 긴급 제동 실험 -->
+  <div class="page hidden" data-page="3">
+    <section class="card">
+      <h2>🧱 상자 벽 앞에서 스스로 멈추기 <span class="lead" style="display:inline">(앞 센서 220)</span></h2>
+      <div class="chips" id="speedChips"></div>
+      <div class="row" style="justify-content:center">
+        <button id="runBtn" class="btn mint big">▶ 준비… 출발!</button>
+        <button id="stopBtn" class="btn coral big hidden">■ 멈춰</button>
+      </div>
+      <div class="clock" id="runMsg">속도를 고르고 출발해요</div>
+      <p class="say">앞 센서 <b id="irNow3">–</b></p>
+      <div id="measureBox" class="hidden">
+        <p class="say">완전히 멈춘 뒤, 멈춘 곳부터 벽까지 재요</p>
+        <div class="len"><input id="cmIn" type="number" inputmode="numeric" min="0" max="99">cm<input id="mmIn" type="number" inputmode="numeric" min="0" max="9">mm<button id="saveLen" class="btn mint">기록하기</button></div>
+      </div>
+      <p class="fb" id="runFb"></p>
+      <p class="lead">⚠ 벽은 빈 상자로, 알티노 앞에 손을 넣지 않아요.</p>
+    </section>
+    <section class="card">
+      <h2>📊 멈춘 곳부터 벽까지 <span class="lead" style="display:inline">(활동지 3번)</span></h2>
+      <table id="brakeTable"></table>
+      <p class="say" id="brakeSay"></p>
+      <div class="row" style="justify-content:flex-end;margin-top:auto"><button id="brakeReset" class="btn ghost">처음부터</button></div>
+    </section>
+  </div>
+</div>
+
+<!-- ★ 스크립트 순서 고정 -->
+<script src="js/protocol.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/dotmatrix.js"></script>
+<script src="js/transport.js"></script>
+<script src="js/kit.js"></script>
+<script src="js/t10.js"></script>
+</body>
+</html>

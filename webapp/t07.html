@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>t07 수학 시험 보는 날 — 알티노 로봇 학교</title>
+<style>
+  /* ★ 공통 스타일 */
+  @font-face{font-family:'Esamanru';src:url('fonts/esamanru-light.woff2') format('woff2');font-weight:300;font-display:swap}
+  @font-face{font-family:'Esamanru';src:url('fonts/esamanru-medium.woff2') format('woff2');font-weight:500;font-display:swap}
+  @font-face{font-family:'Esamanru';src:url('fonts/esamanru-bold.woff2') format('woff2');font-weight:700;font-display:swap}
+  :root{--cream:#fff7ea;--ink:#3a3230;--mut:#9b8f86;--mint:#37c9ad;--sun:#ffb23e;--coral:#ff7a86;--blue:#5ea0ff;--grape:#b085ff;--line:#f0e6d8;--card:#fff;--shadow:0 8px 24px rgba(120,90,50,.12);--r:20px}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;margin:0}
+  body{font-family:'Esamanru','Pretendard',system-ui,sans-serif;font-weight:500;color:var(--ink);
+    background:linear-gradient(rgba(255,247,234,.55),rgba(255,247,234,.55)), url('assets/bg.png') center/cover no-repeat, var(--cream);
+    height:100vh;overflow:hidden;user-select:none;padding:10px 16px;display:flex;flex-direction:column;gap:8px}
+  h1,h2,b{font-weight:700}
+  .hidden{display:none !important}
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .topbar a{color:var(--blue);text-decoration:none;font-size:1.05rem}
+  .btn{border:0;border-radius:16px;font-family:inherit;font-size:1.05rem;padding:12px 18px;cursor:pointer;background:var(--blue);color:#fff;box-shadow:var(--shadow)}
+  .btn:active{transform:translateY(2px)}.btn.ghost{background:#fff;color:var(--ink);border:2px solid var(--line);box-shadow:none}
+  .btn.mint{background:var(--mint)}.btn.coral{background:var(--coral)}.btn.sun{background:var(--sun);color:#5a3200}.btn:disabled{opacity:.45}
+  /* ⚠ 카드는 overflow:hidden (12 문서 S3) */
+  .stage{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .card{background:var(--card);border:2px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);
+    padding:12px 16px;overflow:hidden;min-height:0;display:flex;flex-direction:column;gap:8px}
+  .card h2{margin:0;font-size:1.05rem}
+  .lead{color:var(--mut);font-size:.88rem;margin:0}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  /* ✎ t07 화면 */
+  .steps{display:flex;gap:8px}
+  .steps button{flex:1;border:2px solid var(--line);background:#fff;border-radius:14px;padding:9px 0;font-family:inherit;font-size:1.02rem;color:var(--mut);cursor:pointer}
+  .steps button.on{background:var(--mint);border-color:var(--mint);color:#fff}
+  .page{display:contents}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chips button{flex:1;min-width:72px;min-height:52px;border-radius:14px;border:2px solid var(--line);background:#fff;font-family:inherit;font-size:1.05rem;cursor:pointer}
+  .chips button.on{border-color:var(--blue);background:var(--blue);color:#fff}
+  .say{text-align:center;font-size:1.1rem;margin:0}
+  .q{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;border-radius:18px;background:var(--cream);border:3px dashed var(--line);font-size:3.4rem;font-weight:700;font-variant-numeric:tabular-nums}
+  .q.small{font-size:2.4rem}
+  .answer{display:flex;gap:10px;justify-content:center;align-items:center}
+  .answer input{font-family:inherit;font-size:2rem;width:150px;padding:8px 12px;border-radius:14px;border:3px solid var(--line);text-align:center}
+  .answer .btn{font-size:1.3rem;padding:14px 24px}
+  .fb{text-align:center;font-size:1.15rem;min-height:1.5em;margin:0}
+  .fb.ok{color:#1b8f6a}.fb.no{color:#d0505d}
+  .roles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .roles div{border:2px solid var(--line);border-radius:14px;padding:10px 4px;text-align:center;font-size:1rem}
+  .roles div.on{border-color:var(--sun);background:#fff3dc}
+  .roles div b{display:block;font-size:1.6rem}
+  .log{display:flex;flex-direction:column;gap:6px;font-size:1rem}
+  .log div{display:flex;justify-content:space-between;border-bottom:1px dashed var(--line);padding:4px 2px}
+  .paper{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .paper button{border:2px solid var(--line);border-radius:14px;background:#fff;font-family:inherit;font-size:1.05rem;padding:10px 4px;cursor:pointer;min-height:64px}
+  .paper button.on{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue) inset}
+  .paper button .mk{display:block;font-size:1.3rem;font-weight:700}
+  .paper button .mk.o{color:var(--mint)}.paper button .mk.x{color:var(--coral)}
+  .judge{display:flex;gap:10px;justify-content:center}
+  .judge .btn{font-size:1.2rem;padding:14px 22px}
+  .opts{display:flex;flex-direction:column;gap:6px}
+  .opts button{text-align:left;border:2px solid var(--line);border-radius:12px;background:#fff;font-family:inherit;font-size:1rem;padding:9px 12px;cursor:pointer}
+  .opts button.on{border-color:var(--mint);background:#e6faf5}
+  input[type=text]{font-family:inherit;font-size:1rem;padding:9px 12px;border-radius:12px;border:2px solid var(--line);flex:1;min-width:0}
+  .clock{font-size:2.6rem;font-weight:700;text-align:center;font-variant-numeric:tabular-nums}
+  .score{font-size:4rem;font-weight:700;text-align:center;color:var(--mint);line-height:1}
+  .rounds{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .rounds div{border:2px solid var(--line);border-radius:14px;padding:8px;text-align:center}
+  .rounds div b{font-size:1.8rem;display:block}
+  .result{text-align:center;font-size:1.2rem}
+  .result .m{font-size:3rem;display:block}
+</style>
+</head>
+<body>
+
+<!-- ★ 상단바 -->
+<div class="topbar">
+  <div class="row">
+    <a href="school.html">← 로봇학교</a>
+    <h1 style="margin:0;font-size:1.25rem">🧮 수학 시험 보는 날 <span class="lead" style="display:inline">13–14차시 · 곱셈과 나눗셈</span></h1>
+  </div>
+  <div id="kitBar"></div>
+</div>
+
+<!-- ✎ 단계 표시 — PPT·활동지의 활동 이름과 같다 -->
+<div class="steps" id="steps">
+  <button data-step="1">① 알티노의 문제 읽기</button>
+  <button data-step="2">② 알티노 답안지 채점하기</button>
+  <button data-step="3">③ 연산 레이스</button>
+</div>
+
+<div class="stage">
+
+  <!-- ① 알티노의 문제 읽기 -->
+  <div class="page" data-page="1">
+    <section class="card">
+      <h2>🔢 알티노의 도트를 보고 식으로 써요</h2>
+      <div class="chips" id="gradeChips"></div>
+      <div class="q" id="q1">?</div>
+      <div class="row" style="justify-content:center">
+        <button id="show1" class="btn mint">▶ 문제 보기</button>
+        <button id="again1" class="btn ghost" disabled>다시 보기</button>
+        <button id="next1" class="btn" disabled>다음 →</button>
+      </div>
+      <p class="lead" style="text-align:center">수 → 기호 → 수 → ? 순서로 1.2초씩 나와요. 화면에는 다 본 뒤에 식이 보여요.</p>
+    </section>
+    <section class="card">
+      <h2>✏️ 답을 넣어요</h2>
+      <div class="answer"><input id="ans1" type="number" inputmode="numeric" placeholder="답"><button id="ok1" class="btn mint" disabled>확인</button></div>
+      <p class="fb" id="fb1"></p>
+      <h2>👥 이번 차례</h2>
+      <div class="roles" id="roles"></div>
+      <h2>📋 푼 문제 <span class="lead" style="display:inline">(활동지 1번에 옮겨 적어요)</span></h2>
+      <div class="log" id="log1"></div>
+    </section>
+  </div>
+
+  <!-- ② 알티노 답안지 채점하기 -->
+  <div class="page hidden" data-page="2">
+    <section class="card">
+      <h2>📝 알티노 시험지 — 번호를 누르면 도트로 보여 줘요</h2>
+      <div class="paper" id="paper"></div>
+      <div class="q small" id="q2">번호를 눌러요</div>
+      <div class="judge" id="judgeBox">
+        <button id="judgeO" class="btn mint" disabled>O 맞아요</button>
+        <button id="judgeX" class="btn coral" disabled>X 틀려요</button>
+      </div>
+      <p class="fb" id="fb2"></p>
+    </section>
+    <section class="card">
+      <div id="teachBox" class="hidden" style="display:flex;flex-direction:column;gap:8px">
+        <h2>👩‍🏫 알티노에게 가르쳐 줘요</h2>
+        <div class="answer"><span>바른 답</span><input id="fix2" type="number" inputmode="numeric"><button id="fixOk" class="btn mint">확인</button></div>
+        <p class="lead">알티노가 어디에서 헷갈렸을까요? 하나를 고르거나 직접 써요.</p>
+        <div class="opts" id="opts"></div>
+        <div class="row"><input id="own2" type="text" maxlength="60" placeholder="알티노야, ~해야 해."><button id="ownOk" class="btn">직접 쓰기</button></div>
+        <p class="fb" id="fbTeach"></p>
+      </div>
+      <div id="paperResult" class="result">
+        <span class="m">📝</span>시험지 6문항을 모두 채점해 봐요.
+      </div>
+      <div class="row" style="justify-content:flex-end;margin-top:auto"><button id="reset2" class="btn ghost">처음부터</button></div>
+    </section>
+  </div>
+
+  <!-- ③ 연산 레이스 -->
+  <div class="page hidden" data-page="3">
+    <section class="card">
+      <h2>🏁 연산 레이스 — 맞힐 때마다 알티노가 한 칸 전진!</h2>
+      <div class="q" id="q3">준비</div>
+      <div class="answer"><input id="ans3" type="number" inputmode="numeric" placeholder="답" disabled><button id="ok3" class="btn mint" disabled>확인</button></div>
+      <p class="fb" id="fb3"></p>
+      <div class="row" style="justify-content:center">
+        <button id="help3" class="btn sun" disabled>🃏 도움 카드 (2)</button>
+      </div>
+    </section>
+    <section class="card">
+      <div class="row" style="justify-content:space-between"><h2 id="roundName">1라운드</h2><span class="clock" id="clock3">3:00</span></div>
+      <p class="lead" style="text-align:center">맞힌 문제</p>
+      <div class="score" id="score3">0</div>
+      <div class="row" style="justify-content:center">
+        <button id="start3" class="btn mint" style="font-size:1.3rem">▶ 준비… 출발!</button>
+        <button id="stop3" class="btn coral hidden" style="font-size:1.3rem">■ 멈춰</button>
+      </div>
+      <div class="rounds"><div>1라운드<b id="r1">–</b></div><div>2라운드<b id="r2">–</b></div></div>
+      <div id="raceResult" class="result hidden"></div>
+      <p class="lead">순위는 앱의 정답 수로 정해요(로봇마다 한 칸 거리가 조금 달라요). 배지: 5개 도전 · 8개 실력 · 12개 박사</p>
+      <div class="row" style="justify-content:flex-end"><button id="reset3" class="btn ghost">처음부터</button></div>
+    </section>
+  </div>
+</div>
+
+<!-- ★ 스크립트 순서 고정 -->
+<script src="js/protocol.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/dotmatrix.js"></script>
+<script src="js/transport.js"></script>
+<script src="js/kit.js"></script>
+<script src="js/t07.js"></script>
+</body>
+</html>

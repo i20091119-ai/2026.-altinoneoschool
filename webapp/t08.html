@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>t08 알티노 골든벨 — 알티노 로봇 학교</title>
+<style>
+  /* ★ 공통 스타일 */
+  @font-face{font-family:'Esamanru';src:url('fonts/esamanru-light.woff2') format('woff2');font-weight:300;font-display:swap}
+  @font-face{font-family:'Esamanru';src:url('fonts/esamanru-medium.woff2') format('woff2');font-weight:500;font-display:swap}
+  @font-face{font-family:'Esamanru';src:url('fonts/esamanru-bold.woff2') format('woff2');font-weight:700;font-display:swap}
+  :root{--cream:#fff7ea;--ink:#3a3230;--mut:#9b8f86;--mint:#37c9ad;--sun:#ffb23e;--coral:#ff7a86;--blue:#5ea0ff;--grape:#b085ff;--line:#f0e6d8;--card:#fff;--shadow:0 8px 24px rgba(120,90,50,.12);--r:20px}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;margin:0}
+  body{font-family:'Esamanru','Pretendard',system-ui,sans-serif;font-weight:500;color:var(--ink);
+    background:linear-gradient(rgba(255,247,234,.55),rgba(255,247,234,.55)), url('assets/bg.png') center/cover no-repeat, var(--cream);
+    height:100vh;overflow:hidden;user-select:none;padding:10px 16px;display:flex;flex-direction:column;gap:8px}
+  h1,h2,b{font-weight:700}
+  .hidden{display:none !important}
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .topbar a{color:var(--blue);text-decoration:none;font-size:1.05rem}
+  .btn{border:0;border-radius:16px;font-family:inherit;font-size:1.05rem;padding:12px 18px;cursor:pointer;background:var(--blue);color:#fff;box-shadow:var(--shadow)}
+  .btn:active{transform:translateY(2px)}.btn.ghost{background:#fff;color:var(--ink);border:2px solid var(--line);box-shadow:none}
+  .btn.mint{background:var(--mint)}.btn.coral{background:var(--coral)}.btn.sun{background:var(--sun);color:#5a3200}.btn:disabled{opacity:.45}
+  /* ⚠ 카드는 overflow:hidden (12 문서 S3) */
+  .stage{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .card{background:var(--card);border:2px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);
+    padding:12px 16px;overflow:hidden;min-height:0;display:flex;flex-direction:column;gap:8px}
+  .card h2{margin:0;font-size:1.05rem}
+  .lead{color:var(--mut);font-size:.88rem;margin:0}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  /* ✎ t08 화면 */
+  .steps{display:flex;gap:8px}
+  .steps button{flex:1;border:2px solid var(--line);background:#fff;border-radius:14px;padding:9px 0;font-family:inherit;font-size:1.02rem;color:var(--mut);cursor:pointer}
+  .steps button.on{background:var(--mint);border-color:var(--mint);color:#fff}
+  .page{display:contents}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chips button{flex:1;min-width:72px;min-height:52px;border-radius:14px;border:2px solid var(--line);background:#fff;font-family:inherit;font-size:1.05rem;cursor:pointer}
+  .chips button.on{border-color:var(--blue);background:var(--blue);color:#fff}
+  .say{text-align:center;font-size:1.1rem;margin:0}
+  .fb{text-align:center;font-size:1.15rem;min-height:1.5em;margin:0}
+  .fb.ok{color:#1b8f6a}.fb.no{color:#d0505d}
+  .qbox{border-radius:18px;background:var(--cream);border:3px dashed var(--line);padding:14px;font-size:1.35rem;text-align:center;min-height:96px;display:flex;align-items:center;justify-content:center}
+  .ans{display:flex;gap:10px;justify-content:center}
+  .ans button{width:86px;height:76px;font-size:2rem;border-radius:18px;border:3px solid var(--line);background:#fff;font-family:inherit;cursor:pointer}
+  .ans button.on{border-color:var(--blue);background:var(--blue);color:#fff}
+  .ans button:disabled{opacity:.4}
+  .big{font-size:1.25rem;padding:14px 22px}
+  table{border-collapse:collapse;width:100%;font-size:1rem}
+  th,td{border:2px solid var(--line);padding:6px;text-align:center}
+  th{background:#fffaf1;color:var(--mut);font-weight:500}
+  td.on{background:#fff3dc}
+  .lane{display:flex;gap:4px;align-items:stretch}
+  .lane div{flex:1;height:56px;border-radius:10px;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:1.6rem;background:#fff}
+  .lane div.done{background:#e6faf5;border-color:var(--mint)}
+  .lane div.goal{border-color:var(--sun);background:#fff3dc}
+  .stepper{display:flex;align-items:center;gap:8px}
+  .stepper button{width:52px;height:48px;font-size:1.4rem;border-radius:12px;border:2px solid var(--line);background:#fff;font-family:inherit}
+  .stepper b{font-size:1.4rem;min-width:3.2ch;text-align:center}
+  label.f{display:flex;flex-direction:column;gap:3px;font-size:.92rem;color:var(--mut)}
+  input[type=text]{font-family:inherit;font-size:1rem;padding:8px 10px;border-radius:12px;border:2px solid var(--line);width:100%}
+  .tog{display:flex;gap:6px}
+  .tog button{min-width:56px;min-height:48px;border-radius:12px;border:2px solid var(--line);background:#fff;font-family:inherit;font-size:1.2rem}
+  .tog button.on{border-color:var(--mint);background:var(--mint);color:#fff}
+  .present{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:10px;text-align:center;border-radius:18px;background:var(--cream);border:3px dashed var(--line);padding:14px}
+  .present .pq{font-size:1.9rem;font-weight:700}
+  .present .po{font-size:1.4rem}
+  .rounds{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .rounds div{border:2px solid var(--line);border-radius:14px;padding:6px;text-align:center}
+  .rounds div b{font-size:1.4rem;display:block}
+  .result{text-align:center;font-size:1.2rem}
+  .result .m{font-size:2.6rem;display:block}
+</style>
+</head>
+<body>
+
+<!-- ★ 상단바 -->
+<div class="topbar">
+  <div class="row">
+    <a href="school.html">← 로봇학교</a>
+    <h1 style="margin:0;font-size:1.25rem">🔔 알티노 골든벨 <span class="lead" style="display:inline">15–16차시 · 퀴즈와 발표</span></h1>
+  </div>
+  <div id="kitBar"></div>
+</div>
+
+<!-- ✎ 단계 표시 — PPT·활동지의 활동 이름과 같다 -->
+<div class="steps" id="steps">
+  <button data-step="1">① 골든벨 연습</button>
+  <button data-step="2">② 우리가 내는 퀴즈</button>
+  <button data-step="3">③ 알티노 골든벨 대회</button>
+</div>
+
+<div class="stage">
+
+  <!-- ① 골든벨 연습 -->
+  <div class="page" data-page="1">
+    <section class="card">
+      <h2>📣 연습 문제 <span id="pNo">1</span> / 5 <span class="lead" id="pType" style="display:inline"></span></h2>
+      <div class="qbox" id="pText"></div>
+      <p class="lead" style="text-align:center">모둠이 상의해서 답을 고르고 🔒 답 잠금을 눌러요. 잠그면 바꿀 수 없어요.</p>
+      <div class="ans" id="pAns"></div>
+      <div class="row" style="justify-content:center">
+        <button id="pLock" class="btn sun big" disabled>🔒 답 잠금</button>
+        <button id="pReveal" class="btn big hidden">정답 확인</button>
+      </div>
+      <p class="fb" id="pFb"></p>
+      <div class="row" style="justify-content:center">
+        <button id="pGo" class="btn mint big hidden">⭕ 맞혔어요 → 한 칸 전진</button>
+        <button id="pNext" class="btn big hidden">다음 문제 →</button>
+      </div>
+    </section>
+    <section class="card">
+      <h2>📋 연습 기록 <span class="lead" style="display:inline">(활동지 1번에 옮겨 적어요)</span></h2>
+      <table id="pTable"></table>
+      <p class="say" id="pSum"></p>
+      <div class="row" style="justify-content:center;margin-top:auto">
+        <button id="pStop" class="btn coral">■ 멈춰</button>
+        <button id="pReset" class="btn ghost">처음부터</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- ② 우리가 내는 퀴즈 -->
+  <div class="page hidden" data-page="2">
+    <section class="card">
+      <h2>✏️ 우리 모둠 퀴즈 만들기</h2>
+      <div class="tog" id="quizPick"><button data-k="ox" class="on">O·X 퀴즈</button><button data-k="pick">고르기 퀴즈</button></div>
+      <label class="f">문제<input id="qzQ" type="text" maxlength="60" placeholder="예) 6 × 3과 6+6+6의 답은 같다."></label>
+      <div id="qzOpts" class="hidden" style="display:flex;gap:6px">
+        <label class="f">① 보기<input id="qzO1" type="text" maxlength="16"></label>
+        <label class="f">② 보기<input id="qzO2" type="text" maxlength="16"></label>
+        <label class="f">③ 보기<input id="qzO3" type="text" maxlength="16"></label>
+      </div>
+      <div class="row"><span class="lead">정답</span><div class="tog" id="qzA"></div></div>
+      <label class="f">정답인 까닭<input id="qzWhy" type="text" maxlength="60" placeholder="예) 6을 3번 더한 것이 6 × 3이기 때문이다."></label>
+      <p class="lead" id="qzCheck"></p>
+    </section>
+    <section class="card">
+      <h2>🎤 크게 보며 문제 읽기 · 바꾸어 풀기</h2>
+      <div class="present" id="present"></div>
+      <div class="row" style="justify-content:center">
+        <button id="qzShow" class="btn mint">정답 공개</button>
+      </div>
+      <p class="lead">친구들을 바라보며 또박또박 읽어요. 다른 모둠이 답을 말하면 정답을 공개해요.</p>
+    </section>
+  </div>
+
+  <!-- ③ 알티노 골든벨 대회 -->
+  <div class="page hidden" data-page="3">
+    <section class="card">
+      <h2>🏁 <span id="cRound">1라운드</span> — 맞히면 한 칸 전진, 틀리면 제자리</h2>
+      <div class="lane" id="lane"></div>
+      <div class="row" style="justify-content:space-between">
+        <div class="stepper"><span class="lead">결승선</span><button id="finMinus">−</button><b id="finVal">7</b><button id="finPlus">+</button><span class="lead">칸</span></div>
+        <div class="stepper"><span class="lead">한 칸</span><button id="cellMinus">−</button><b id="cellVal">1.0</b><button id="cellPlus">+</button><span class="lead">초</span></div>
+      </div>
+      <p class="lead">한 칸 = 속도 300 으로 달리는 시간. 레인 길이에 맞춰 대회 전에 정해요.</p>
+      <div class="rounds"><div>1라운드<b id="cr1">–</b></div><div>2라운드<b id="cr2">–</b></div></div>
+      <div id="cResult" class="result hidden"></div>
+      <div class="row" style="justify-content:center;margin-top:auto">
+        <button id="cStop" class="btn coral big">■ 멈춰</button>
+        <button id="cEnd" class="btn ghost">라운드 끝내기</button>
+        <button id="cReset" class="btn ghost">처음부터</button>
+      </div>
+    </section>
+    <section class="card">
+      <h2>❓ <span id="cNo">1</span>번 문제 — 답을 고르고 잠가요</h2>
+      <div class="ans" id="cAns"></div>
+      <div class="row" style="justify-content:center">
+        <button id="cLock" class="btn sun big" disabled>🔒 답 잠금</button>
+      </div>
+      <div class="qbox" id="cMsg">선생님 문제나 모둠 퀴즈를 잘 들어요.</div>
+      <div class="row" style="justify-content:center">
+        <button id="cOk" class="btn mint big" disabled>⭕ 맞혔어요</button>
+        <button id="cNo2" class="btn coral big" disabled>❌ 틀렸어요</button>
+      </div>
+      <div class="row" style="justify-content:center"><button id="cHost" class="btn ghost">🎤 우리 모둠 문제예요(사회자)</button></div>
+    </section>
+  </div>
+</div>
+
+<!-- ★ 스크립트 순서 고정 -->
+<script src="js/protocol.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/dotmatrix.js"></script>
+<script src="js/transport.js"></script>
+<script src="js/kit.js"></script>
+<script src="js/t08.js"></script>
+</body>
+</html>

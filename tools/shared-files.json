@@ -1,5 +1,5 @@
 {
- "made": "2026-10-08",
+ "made": "2026-10-15",
  "files": {
   ".github/workflows/android.yml": "d9e27f9f788b5c35f8d1fe79f7a059a2da574dc05fb14d3194e28d7d365cb7b0",
   ".github/workflows/pages.yml": "a8a1d65738f654623ad4171b1bb2395eeb5dbdb90bb5b5854cba49174f255301",
@@ -51,7 +51,7 @@
   "webapp/fonts/esamanru-medium.woff2": "cce1e5719e8db64fa95072bdab5075d1a03f6ef22485f178f3addda0b52d98e5",
   "webapp/home.html": "7f00cd51a77f4cf47d59ccc5f1ba0df85589476a6e0b50d989f02cb4003f6f49",
   "webapp/index.html": "7f2213db743a03315dabfd177d3487bb0a29a6feb1c6ad1ef72985941b8fe6fa",
-  "webapp/js/apps.js": "265e480b2f1e57d89497e38ad55b66dfcf39d094e21b00f1f684b53653dcf330",
+  "webapp/js/apps.js": "aec22164cff6bcf375747db941be5485a57c3795a624ce585c9ca72fa0a153cc",
   "webapp/js/code.js": "7d3a50c57245c969666cd85d17db565656725a3177cea1d2a0be3c45caf4b3dc",
   "webapp/js/dotmatrix.js": "9e719e9d1056958311daaee9a123b2622e8fde4f4163fb796f0079a9473f8403",
   "webapp/js/kit.js": "7abc24c3a1b4a2901bbf8cad1c8e991d851da276c3e2a2265db389e86d29d7a5",
