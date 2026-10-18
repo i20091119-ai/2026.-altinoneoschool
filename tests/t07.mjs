@@ -93,7 +93,8 @@ const answer = async () => { await p.fill('#ans3', String(solve(await p.textCont
 await p.fill('#ans3', '999'); await p.press('#ans3', 'Enter'); await p.waitForTimeout(500);
 ok('틀리면 제자리', (await tail(4)).every(v => v === 0), JSON.stringify(await tail(4)));
 await clearTx(); await answer(); await p.waitForTimeout(500);
-ok('맞히면 한 칸 전진(속도 300)', (await tail(3)).every(v => v === 300), JSON.stringify(await tail(3)));
+// 처음 잠깐은 S4 킥(400) — 바쁜 컴퓨터에선 0.5초 뒤 표본에 킥이 끼므로 킥을 지난 프레임만 본다
+ok('맞히면 한 칸 전진(속도 300)', await p.evaluate(() => { const t = window.__tx, i = t.findIndex(v => v === 300); return i >= 0 && t.slice(i).filter(v => v !== 0).every(v => v === 300); }), JSON.stringify(await tail(5)));
 await answer(); await p.waitForTimeout(2300);
 const moved = (await p.evaluate(() => window.__tx.slice())).filter(v => v === 300).length;
 ok('두 문제 맞히면 두 칸(약 2초, 300 프레임 17~23개)', moved >= 17 && moved <= 23, String(moved));
