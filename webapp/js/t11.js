@@ -1,5 +1,5 @@
-// t11 순서대로 기억시키기 (21–22차시) — 기획서 docs/topics/t11.md
-// ① 사람 로봇 놀이(명령 카드를 놓고 한 장씩 읽기 — 로봇은 안 움직임) → ② 블록으로 기억시키기(한 칸 맞추기,
+// t11 순서대로 길 안내하기 (21–22차시) — 기획서 docs/topics/t11.md
+// ① 사람 로봇 놀이(명령 카드를 놓고 한 장씩 읽기 — 로봇은 안 움직임) → ② 블록으로 길 안내하기(한 칸 맞추기,
 // 블록 실행, 되풀이 규칙 찾기) → ③ 버그 고치기 미션(틀린 순서를 실행해 보고 고치기, 미션 3개)
 // ❗ 회전 센서·자이로가 없어 '한 칸'·'돌기'는 시간으로만 만든다(03 §10). 로봇별 보정은 이 앱의 저장값(cal)에 —
 //    t14 와 공용(kit)으로 할지는 열린 결정(10 §7-4).
@@ -9,7 +9,7 @@
 
   const kit = AltinoKit.create({
     appId: 't11',
-    title: '순서대로 기억시키기',
+    title: '순서대로 길 안내하기',
     onRunEnd: endRun,
     onTick: () => { if (running && !kit.running) endRun(); },   // kit.stop()·화면 이탈로 끝난 실행 정리
   });
@@ -19,6 +19,10 @@
   const GAP_MS = 300;           // 블록 사이 쉼 — 아이들이 눈으로 따라갈 수 있게
   const MAX_BLOCKS = 12;
   const SYM = { F: '↑', L: '←', R: '→' };
+  // 블록 그림 = 수업에서 쓰는 노란 화살표 카드(활동지·PPT 와 같은 그림)
+  const IMG = { F: 'assets/t11/up.png', L: 'assets/t11/left.png', R: 'assets/t11/right.png' };
+  // 그림 옆에 화살표 글자를 숨겨 둔다(읽기 도구·시험이 순서를 글자로 읽는다)
+  const card = (b) => `<img class="ar" src="${IMG[b]}" alt=""><span class="sr">${SYM[b]}</span>`;
   const NAME = { F: '앞으로 한 칸', L: '왼쪽으로 돌기', R: '오른쪽으로 돌기' };
   // 격자: x = -1~3 (5칸), y = 0~3 (4칸). 출발 (0,0) 위쪽을 보고 시작. 방향 0=위 1=오른쪽 2=아래 3=왼쪽
   const X0 = -1, X1 = 3, Y1 = 3, START = { x: 0, y: 0, d: 0 };
@@ -80,7 +84,7 @@
     let sel = -1, now = -1, locked = false;
     ['F', 'L', 'R'].forEach(b => {
       const el = document.createElement('button'); el.dataset.b = b;
-      el.innerHTML = `<b>${SYM[b]}</b>${NAME[b]}`;
+      el.innerHTML = `${card(b)}${NAME[b]}`;
       el.onclick = () => {
         if (locked) return;
         const s = getSeq(); if (s.length >= MAX_BLOCKS) { kit.toast(`블록은 ${MAX_BLOCKS}개까지 놓을 수 있어요`); return; }
@@ -110,7 +114,7 @@
         strip.innerHTML = s.length ? '' : '<span class="empty">위의 블록을 눌러 순서대로 놓아요</span>';
         s.forEach((b, i) => {
           const el = document.createElement('button'); el.dataset.i = i;
-          el.innerHTML = `<i>${i + 1}</i>${SYM[b]}`;
+          el.innerHTML = `<i>${i + 1}</i>${card(b)}`;
           el.className = (i === sel && !locked ? 'sel ' : '') + (i === now ? 'now ' : '') + (now >= 0 && i < now ? 'done' : '');
           el.onclick = () => { if (locked) return; sel = sel === i ? -1 : i; onChange(); };
           strip.appendChild(el);
@@ -274,7 +278,7 @@
 
   function render2() {
     const m3 = step === 3, seq = curSeq(), g = curGoal();
-    $('edTitle').textContent = m3 ? '🐞 버그를 그대로 실행해 보고, 블록을 고쳐요' : '🧱 블록을 순서대로 놓아 길을 기억시켜요';
+    $('edTitle').textContent = m3 ? '🐞 버그를 그대로 실행해 보고, 블록을 고쳐요' : '🧱 블록을 순서대로 놓아 길을 안내해요';
     $('missionChips').classList.toggle('hidden', !m3);
     document.querySelectorAll('#missionChips button').forEach(b => { const i = +b.dataset.i; b.classList.toggle('on', i === mi); b.classList.toggle('done', !!mis[i].solved); });
     ed2.render();
@@ -330,7 +334,7 @@
     if (stars <= best) return;           // 기록부에는 가장 좋은 결과 한 줄만 (05 §7)
     kit.store.set('bestStars', stars);
     kit.record.add({
-      title: stars === 3 ? '버그를 모두 고쳤어요' : '블록으로 길을 기억시켰어요',
+      title: stars === 3 ? '버그를 모두 고쳤어요' : '블록으로 길을 안내했어요',
       detail: [done2 && `코스 완주 ${done2.seq}`, done2 && done2.rep, solved && `미션 ${solved}개 해결`].filter(Boolean).join(' · '),
       stars,
     });

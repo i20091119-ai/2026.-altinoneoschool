@@ -15,7 +15,7 @@ window.ALTINO_APPS = [
   { id: 't08', title: '알티노 골든벨',          lessons: '15–16', band: '교과반',   ready: true  },
   { id: 't09', title: '어둠 알아채기',          lessons: '17–18', band: '교과반',   ready: true  },
   { id: 't10', title: '스스로 멈추는 차의 비밀', lessons: '19–20', band: '교과반',   ready: true  },
-  { id: 't11', title: '순서대로 기억시키기',     lessons: '21–22', band: '교과반',   ready: true  },
+  { id: 't11', title: '순서대로 길 안내하기',     lessons: '21–22', band: '교과반',   ready: true  },
   { id: 't12', title: '운동회',                lessons: '23–24', band: '어울림반', ready: true },
   { id: 't13', title: '말 알아듣기',            lessons: '25–26', band: '어울림반', ready: true },
   { id: 't14', title: '보물 지도 탐험',         lessons: '27–28', band: '어울림반', ready: true },

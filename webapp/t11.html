@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>t11 순서대로 기억시키기 — 알티노 로봇 학교</title>
+<title>t11 순서대로 길 안내하기 — 알티노 로봇 학교</title>
 <style>
   /* ★ 공통 스타일 */
   @font-face{font-family:'Esamanru';src:url('fonts/esamanru-light.woff2') format('woff2');font-weight:300;font-display:swap}
@@ -43,6 +43,9 @@
   .palette{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
   .palette button{min-height:64px;border-radius:16px;border:2px solid var(--line);background:#fff;font-family:inherit;font-size:1rem;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:var(--shadow)}
   .palette button b{font-size:1.7rem;line-height:1}
+  .palette button img.ar{width:46px;height:46px;border-radius:8px;display:block}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .strip button img.ar{width:36px;height:36px;border-radius:6px;display:block;margin:auto;pointer-events:none}
   .strip{display:flex;flex-wrap:wrap;gap:6px;min-height:66px;padding:8px;border-radius:14px;background:var(--cream);border:2px dashed var(--line);align-content:flex-start}
   .strip button{width:50px;height:50px;border-radius:12px;border:2px solid var(--line);background:#fff;font-size:1.6rem;font-family:inherit;position:relative;cursor:pointer}
   .strip button.sel{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue) inset}
@@ -68,6 +71,8 @@
   .stepper{display:flex;align-items:center;gap:8px;justify-content:center}
   .stepper button{width:58px;height:52px;font-size:1.5rem;border-radius:12px;border:2px solid var(--line);background:#fff;font-family:inherit}
   .stepper b{font-size:1.6rem;min-width:3.4ch;text-align:center}
+  /* '해 보기' 버튼은 − + 네모 크기를 받지 않는다(태블릿에서 글자가 잘려 빈 상자로 보였다) */
+  .stepper button.btn{width:auto;height:auto;min-height:52px;font-size:1.05rem;padding:10px 16px;border:0;background:var(--blue);color:#fff;border-radius:16px;white-space:nowrap}
   .judge{display:flex;gap:10px;justify-content:center}
   .big{font-size:1.15rem;padding:13px 20px}
 </style>
@@ -78,7 +83,7 @@
 <div class="topbar">
   <div class="row">
     <a href="school.html">← 로봇학교</a>
-    <h1 style="margin:0;font-size:1.25rem">🧩 순서대로 기억시키기 <span class="lead" style="display:inline">21–22차시 · 순서와 되풀이 규칙</span></h1>
+    <h1 style="margin:0;font-size:1.25rem">🧩 순서대로 길 안내하기 <span class="lead" style="display:inline">21–22차시 · 순서와 되풀이 규칙</span></h1>
   </div>
   <div id="kitBar"></div>
 </div>
@@ -86,7 +91,7 @@
 <!-- ✎ 단계 표시 — PPT·활동지의 활동 이름과 같다 -->
 <div class="steps" id="steps">
   <button data-step="1">① 사람 로봇 놀이</button>
-  <button data-step="2">② 블록으로 기억시키기</button>
+  <button data-step="2">② 블록으로 길 안내하기</button>
   <button data-step="3">③ 버그 고치기 미션</button>
 </div>
 
@@ -114,7 +119,7 @@
     </section>
   </div>
 
-  <!-- ② 블록으로 기억시키기 · ③ 버그 고치기 미션 (같은 화면, ③ 은 미션 카드가 보인다) -->
+  <!-- ② 블록으로 길 안내하기 · ③ 버그 고치기 미션 (같은 화면, ③ 은 미션 카드가 보인다) -->
   <div class="page hidden" data-page="2">
     <section class="card">
       <h2 id="edTitle">🧱 블록을 순서대로 놓아요</h2>

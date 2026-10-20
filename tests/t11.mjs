@@ -1,4 +1,4 @@
-// t11 순서대로 기억시키기 전용 시험 — 카드 읽기(로봇 안 움직임), 블록 편집, 실행·멈춤, 되풀이 규칙, 버그 미션, 한 칸 맞추기, 성장기록부.
+// t11 순서대로 길 안내하기 전용 시험 — 카드 읽기(로봇 안 움직임), 블록 편집, 실행·멈춤, 되풀이 규칙, 버그 미션, 한 칸 맞추기, 성장기록부.
 //   node tests/t11.mjs
 import http from 'node:http';
 import fs from 'node:fs';
@@ -57,7 +57,7 @@ await p.click('#rec1'); await p.waitForTimeout(100);
 att = await store('altino.t11.att1');
 ok('다른 곳에 가면 X', att.length === 2 && !att[1].ok, JSON.stringify(att));
 
-// ── ② 블록으로 기억시키기 ───────────────────────────────────────
+// ── ② 블록으로 길 안내하기 ───────────────────────────────────────
 await p.evaluate(() => { localStorage.setItem('altino.t11.cellMs', '300'); localStorage.setItem('altino.t11.turnMs', '200'); });
 await p.reload(); await p.waitForTimeout(500);
 await p.click('[data-step="2"]');
