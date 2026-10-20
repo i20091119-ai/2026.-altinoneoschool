@@ -35,6 +35,8 @@
   let faces = kit.store.get('faces', {});            // { cardId: { feel, bytes } } — t15 학예회에서 다시 쓸 표정
   if (!faces || typeof faces !== 'object' || Array.isArray(faces)) faces = {};
   Object.keys(faces).forEach(k => { if (!CARDS.some(c => c.id === k) || !okBytes(faces[k].bytes)) delete faces[k]; });
+  const shareFaces = () => kit.share.set('faces', faces);   // t15 학예회 표정 칸이 읽는다(kit 공용 데이터)
+  shareFaces();
   let card = null, feel = null;
   let test = kit.store.get('test', null);
   if (!test || !Array.isArray(test.order) || !Array.isArray(test.results) || test.order.length !== TESTN) test = null;
@@ -104,7 +106,7 @@
   }
   $('save2').onclick = () => {
     if (!card || !feel || !lit(g2)) return;
-    faces[card] = { feel, bytes: g2.slice() }; kit.store.set('faces', faces);
+    faces[card] = { feel, bytes: g2.slice() }; kit.store.set('faces', faces); shareFaces();
     kit.signal('success'); kit.toast('저장했어요');
     const next = CARDS.find(c => !faces[c.id]);
     if (next) pickCard(next.id); else renderCards();

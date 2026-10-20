@@ -21,7 +21,7 @@ const MUT = [
   ['S4', 'smoke', "      if (o.kick !== false && m !== 0 && lastM === 0 && Math.abs(m) < KICK_BELOW) kickUntil = Date.now() + KICK_MS;\n", ''],
   ['S5', 'smoke', '        alive: () => running && gen === runGen,', '        alive: () => running,'],
   ['S6', 'smoke', '      if (running && m !== 0 && transport && transport.connected && Date.now() - lastRxAt > FRESH_MS) {', '      if (false) {'],
-  ['S7', 'smoke', '      state.go(0, 0); state.steer(0); state.soundSet(0);\n      send();\n    }\n    function panic', '      state.go(0, 0); state.steer(0);\n      send();\n    }\n    function panic'],
+  ['S7', 'smoke', '      state.go(0, 0); state.steer(0); state.soundSet(0); state.ledSet(0);\n      send();\n      if (wasRunning', '      state.go(0, 0); state.steer(0); state.ledSet(0);\n      send();\n      if (wasRunning'],
 ];
 let caught = 0, missing = 0;
 try {

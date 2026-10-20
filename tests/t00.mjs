@@ -68,6 +68,24 @@ ok('초기화는 확인창을 거친다(kit.confirm)', await p.isVisible('#altin
 await p.click('#acYes'); await p.waitForTimeout(150);
 ok('확인하면 초기화', (await p.textContent('#cnt')).trim() === '0');
 
+// kit 1.1 — 정지는 불빛도 끄고 onRunEnd 를 부른다 · 소리만 끄기 · 공용 데이터
+const last = () => p.evaluate(() => { const f = window.__txFrames.at(-1); return f ? { m: window.__tx.at(-1), snd: f[19], led: (f[20] << 8) | f[21] } : null; });
+await p.click('#ledOn'); await p.click('#autoRun'); await p.waitForTimeout(300);
+await p.evaluate(() => window.__altinoKit.stop()); await p.waitForTimeout(250);   // 앱의 멈춤 버튼이 아니라 kit.stop 만
+let L = await last();
+ok('kit.stop: 정지 + 불빛 끔', L.m === 0 && L.led === 0, JSON.stringify(L));
+ok('kit.stop: 실행 중이었으면 onRunEnd 로 화면이 돌아옴', await p.isVisible('#autoRun') && !(await p.isVisible('#autoStop')));
+await p.evaluate(() => { const k = window.__altinoKit; k.drive(300, 0); k.beep(37, 5000); }); await p.waitForTimeout(250);
+ok('kit.beep 이 울림', (await last()).snd === 37, JSON.stringify(await last()));
+await p.evaluate(() => window.__altinoKit.beepOff()); await p.waitForTimeout(250);
+L = await last();
+ok('kit.beepOff: 소리만 끄고 바퀴는 그대로', L.snd === 0 && L.m === 300, JSON.stringify(L));
+await p.evaluate(() => window.__altinoKit.stop());
+ok('kit.share: 주인 앱이 아니면 못 씀', await p.evaluate(() => window.__altinoKit.share.set('faces', { x: 1 }) === false && localStorage.getItem('altino.share.faces') === null));
+await p.evaluate(() => localStorage.setItem('altino.share.signals', JSON.stringify({ 안녕: ['ls'] })));
+ok('kit.share: 읽기는 모든 앱, 없는 이름은 기본값', await p.evaluate(() => { const s = window.__altinoKit.share; return s.get('signals', {}).안녕[0] === 'ls' && s.get('nope', 7) === 7; }));
+await p.evaluate(() => localStorage.removeItem('altino.share.signals'));
+
 // 망가진 저장값 방어 — store.num 이 범위로 자른다
 await p.evaluate((a) => localStorage.setItem(`altino.${a}.speed`, '"-999"'), APP);
 await p.reload(); await p.waitForTimeout(500);

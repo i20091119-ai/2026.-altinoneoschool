@@ -28,7 +28,7 @@ const kit = AltinoKit.create({
   onSensor: (s, kit) => {},     // 센서 프레임마다(10Hz). s.ir1~ir6, s.cds, s.battery
   onTick: (kit) => {},          // 100ms 마다, 전송 직전
   onStatus: (base, raw) => {},  // 연결 상태 바뀔 때. base: connected | reconnecting | disconnected | error …
-  onRunEnd: () => {},           // kit.run 이 끝날 때(정상·정지·오류 모두)
+  onRunEnd: () => {},           // kit.run 이 끝날 때(정상·kit.stop()·화면 이탈·오류 모두) — 여러 번 불려도 괜찮게 짤 것
   kick: true,                   // false 면 느린 출발 킥(S4)을 끈다 — t02 에서 '출발 못 하는 속도'를 보여 줄 때
 });
 ```
@@ -41,7 +41,7 @@ const kit = AltinoKit.create({
 | API | 설명 |
 |---|---|
 | `kit.drive(speed, steer)` | speed −1000~1000(양수 전진), steer −127(좌)~127(우). **지시만** 하고 전송은 kit 이 10Hz 로 |
-| `kit.stop()` | 즉시 정지(정지 프레임 바로 전송) + 자율 동작 중단 + 소리 끔 |
+| `kit.stop()` | 즉시 정지(정지 프레임 바로 전송) + 자율 동작 중단 + 소리·**불빛(LED) 끔**. 실행 중이었으면 **`onRunEnd` 도 부른다**(kit 1.1, 2026-10-20) — '멈춰' 뒤에 화면을 따로 되돌리지 않아도 된다 |
 | `kit.hold(el, onDown, onUp)` | **누르는 동안만** 버튼. 포인터 캡처·touch-action 자동. 창이 떠 있으면 눌러도 무시 |
 | `kit.block(el)` | 이 요소(창)가 보이는 동안 움직임을 막는다 |
 | `kit.isBlocked()` | 지금 막혀 있는가 |
@@ -78,6 +78,7 @@ if (!started) kit.toast('이미 움직이는 중이에요');
 | API | 설명 |
 |---|---|
 | `kit.beep(code, ms=400)` | 부저. **ms 뒤 자동으로 꺼짐.** 코드는 실측된 8음만: 37도 39레 41미 42파 44솔 46라 48시 49높은도 |
+| `kit.beepOff()` | **소리만** 끈다(울리던 신호음 포함). 바퀴·불빛·실행은 그대로 — 누르는 동안 소리 나는 건반(t04 ③) 등 |
 | `kit.signal(name)` | **신호 사전**(05 §3). `success` `fail` `notice` `start` `caught`. 뜻이 있는 소리는 이걸로 |
 | `kit.led(mask)` | LED. 실측된 값은 **15 = 전방등**, 0 = 끔. 나머지 비트는 미실측(03 §6) |
 | `kit.dot.number(n)` | 도트에 0~99 |
@@ -97,6 +98,7 @@ if (!started) kit.toast('이미 움직이는 중이에요');
 | `kit.team.get()` · `set(이름)` | `altino.team.name` | **모둠 알티노 이름**(12자). t01 이 짓고 모든 앱이 읽음 |
 | `kit.record.add({title, detail, stars})` | `altino.record` | **성장기록부**에 한 줄. title 40자·detail 120자·stars 0~3. 앱 번호·시각 자동 |
 | `kit.record.list()` · `ofApp(id)` | 〃 | 전체 / 한 앱의 기록 (t15 졸업식이 모음) |
+| `kit.share.get(이름, 기본값)` · `set(이름, 값)` | `altino.share.이름` | **다른 앱에서 다시 쓸 작품.** 읽기는 모든 앱, 쓰기는 주인 앱만(아니면 false). 이름은 kit 의 `SHARED` 에 올린 것만: `faces`(t03 표정 4장 → t15 표정 칸) · `signals`(t05 신호표 → t15 신호 칸) |
 
 - `localStorage` 를 직접 쓰지 않는다(검사기가 잡음). 다른 앱의 `altino.tNN.*` 를 읽지 않는다.
 - 저장은 **태블릿에** 된다. 앱을 **지우고 새로 깔면 날아간다** — 업데이트는 덮어쓰기로(06 §5).

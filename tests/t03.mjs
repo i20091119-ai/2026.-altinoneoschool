@@ -68,6 +68,7 @@ for (const [id, f, n] of [['pencil', '슬픔', 30], ['noise', '놀람', 40], ['f
   await p.locator('#feel button', { hasText: f }).click(); await p.click('#save2'); await p.waitForTimeout(80);
 }
 ok('네 장 모두 저장', Object.keys(await store('altino.t03.faces')).length === 4);
+ok('표정 4장이 공용 데이터로도 저장(t15 표정 칸)', JSON.stringify(await store('altino.share.faces')) === JSON.stringify(await store('altino.t03.faces')));
 
 // ── ③ 표정 맞히기 시험 ───────────────────────────────────────────
 await step(3); await p.waitForTimeout(150);
