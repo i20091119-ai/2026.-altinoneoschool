@@ -8,10 +8,12 @@ import android.os.Build
 import android.provider.Settings
 import android.os.Bundle
 import android.view.WindowManager
+import android.widget.FrameLayout
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.OnBackPressedCallback
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -36,7 +38,10 @@ class MainActivity : AppCompatActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         web = WebView(this)
-        setContentView(web)
+        // 웹 화면을 틀(FrameLayout)에 넣고 틀에 여백을 준다 — 아래 '시스템 바 여백' 참고.
+        val frame = FrameLayout(this).apply { setBackgroundColor(0xFF000000.toInt()) }
+        frame.addView(web, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+        setContentView(frame)
 
         web.settings.apply {
             javaScriptEnabled = true
@@ -82,6 +87,16 @@ class MainActivity : AppCompatActivity() {
                 it.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             }
         } catch (e: Exception) {}
+        // 시스템 바 여백: 위에서 화면을 시스템 바 뒤까지 펼쳤기 때문에(setDecorFitsSystemWindows false),
+        // 스마트폰 가로 화면에서는 오른쪽 내비게이션 바·왼쪽 카메라 구멍이 웹 화면을 덮어
+        // 오른쪽 끝(어울림반 칸, '체험관 홈')이 잘렸다. 내비게이션 바·카메라 구멍·키보드 만큼
+        // 틀에 여백을 줘서 웹 화면이 보이는 곳 안에만 그려지게 한다. (WebView 자체 여백은 무시되는 기기가 있어 틀에 준다)
+        ViewCompat.setOnApplyWindowInsetsListener(frame) { v, insets ->
+            val i = insets.getInsets(
+                WindowInsetsCompat.Type.navigationBars() or WindowInsetsCompat.Type.displayCutout() or WindowInsetsCompat.Type.ime())
+            v.setPadding(i.left, i.top, i.right, i.bottom)
+            WindowInsetsCompat.CONSUMED
+        }
 
         // 뒤로가기: 앱을 종료하지 말고 웹 화면 뒤로. (학생이 무심코 눌러 앱이 꺼지고
         // 자율배송 6단계 진행이 통째로 날아가던 문제)
