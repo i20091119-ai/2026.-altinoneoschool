@@ -72,6 +72,7 @@ const sg = await store('altino.t05.signals');
 ok('신호표 저장(t15 후보)', sg['안녕'].join() === 'ls' && sg['조심해'].length === 3, JSON.stringify(sg));
 for (let k = 0; k < 7; k++) await pal('ls');
 ok('블록은 6개까지', (await store('altino.t05.signals'))['따라와'].length === 6);
+ok('신호표가 공용 데이터로도 저장(t15 신호 칸)', JSON.stringify(await store('altino.share.signals')) === JSON.stringify(await store('altino.t05.signals')));
 await p.click('#clr2'); await pal('ll'); await pal('ls');
 await clearAll(); await p.click('#try2'); await p.waitForTimeout(400);
 ok('보내 보기: 빛 길게 동안 LED 15', (await leds()).includes(15));

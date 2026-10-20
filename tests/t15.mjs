@@ -103,5 +103,38 @@ ok('처음부터: 공연·졸업장은 지우고 성장기록부는 남김', (aw
 const keys = await p.evaluate(() => Object.keys(localStorage));
 ok('저장은 altino.t15.* 와 공용 키만', keys.every(k => k.startsWith('altino.t15.') || k === 'altino.record' || k === 'altino.team.name' || !k.startsWith('altino.')), keys.join(','));
 ok('무에러', errs.length === 0, errs.join(' | '));
+
+// ── t03 표정 · t05 신호표 다시 쓰기 (kit 공용 데이터) ────────────────
+const ctx2 = await br.newContext({ viewport: { width: 1280, height: 800 } });
+await ctx2.addInitScript(STUB);
+await ctx2.addInitScript(() => { setInterval(() => window.__feed && window.__feed({}), 100); });
+await ctx2.addInitScript(() => {
+  if (sessionStorage.getItem('t15share')) return; sessionStorage.setItem('t15share', '1');
+  localStorage.setItem('altino.share.faces', JSON.stringify({ praise: { feel: '기쁨', bytes: [1, 2, 3, 4, 5, 6, 7, 8] }, fall: { feel: '걱정', bytes: [0, 0, 0] } }));
+  localStorage.setItem('altino.share.signals', JSON.stringify({ 안녕: ['ll', 'hs'], 조심해: [] }));
+});
+const q = await ctx2.newPage(); const errs2 = []; q.on('pageerror', e => errs2.push(e.message));
+await q.goto(BASE + `/${APP}.html`); await q.waitForTimeout(700);
+const qstore = (k) => q.evaluate((key) => JSON.parse(localStorage.getItem(key) || 'null'), k);
+const dotNames = await q.$$eval('#cDot button', a => a.map(b => b.textContent));
+ok('t03 표정이 표정 칸에 나옴(망가진 표정은 뺌)', dotNames.some(t => t.includes('기쁨')) && !dotNames.some(t => t.includes('걱정')), dotNames.join(','));
+const sigNames = await q.$$eval('#cSig button', a => a.map(b => b.textContent));
+ok('t05 신호가 신호 칸에 나옴(빈 신호는 뺌)', sigNames.length === 2 && sigNames[1].startsWith('안녕'), sigNames.join(','));
+await q.click('#cDot button:has-text("기쁨")'); await q.click('#cSig button:nth-child(2)'); await q.waitForTimeout(100);
+const c0 = (await qstore('altino.t15.cells'))[0];
+ok('칸에 t03 표정·t05 신호 저장', c0.d === 'fpraise' && c0.s === '안녕', JSON.stringify(c0));
+await q.evaluate(() => { window.__tx.length = 0; window.__txFrames.length = 0; });
+await q.click('#tryCell'); await q.waitForTimeout(1500);
+const qf = () => q.evaluate(() => { const f = window.__txFrames.at(-1); return { snd: f[19], led: (f[20] << 8) | f[21], dot: Array.from(f.slice(11, 19)) }; });
+let F = await qf();
+ok('신호 ll: 준비 뒤 빛이 길게(0.9초) 켜짐', F.led === 15, JSON.stringify(F));
+await q.waitForTimeout(800);
+F = await qf();
+ok('신호 hs: 이어서 경적(42), 칸(1초)이 끝나도 신호는 끝까지', F.snd === 42 && F.led === 0, JSON.stringify(F));
+await q.waitForSelector('#tryCell', { state: 'visible', timeout: 5000 }); await q.waitForTimeout(300);
+F = await qf();
+ok('신호가 끝나면 소리·불 끔', F.snd === 0 && F.led === 0, JSON.stringify(F));
+ok('t15 는 공용 데이터를 쓰지 않음(읽기만)', JSON.stringify(await qstore('altino.share.signals')).includes('조심해'));
+ok('무에러(공용 데이터)', errs2.length === 0, errs2.join(' | '));
 console.log('──────────────'); console.log(`${APP} 앱 시험: ${pass} 통과 / ${fail} 실패`);
 await br.close(); server.close(); process.exit(fail ? 1 : 0);

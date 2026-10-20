@@ -34,6 +34,7 @@
   if (!sigs || typeof sigs !== 'object' || Array.isArray(sigs)) sigs = {};
   MEANS.forEach(m => { sigs[m] = Array.isArray(sigs[m]) ? sigs[m].filter(e => EL[e]).slice(0, MAXEL) : []; });
   Object.keys(sigs).forEach(k => { if (!MEANS.includes(k)) delete sigs[k]; });
+  kit.share.set('signals', sigs);
   let mean = MEANS[0];
   let test = kit.store.get('test', null);
   if (!test || !Array.isArray(test.order) || test.order.length !== TESTN || !test.order.every(m => MEANS.includes(m)) || !Array.isArray(test.results)) test = null;
@@ -112,7 +113,7 @@
   };
   $('try2').onclick = () => tryOne(sigs[mean]);
   $('stop2').onclick = () => { stopAll(); renderAll(); };
-  function saveSigs() { kit.store.set('signals', sigs); }
+  function saveSigs() { kit.store.set('signals', sigs); kit.share.set('signals', sigs); }   // t15 학예회 신호 칸이 읽는다(kit 공용 데이터)
   const keyOf = (l) => l.join(',');
   function dups() {
     const seen = {}, out = [];

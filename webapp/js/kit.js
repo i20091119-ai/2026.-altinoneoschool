@@ -13,7 +13,7 @@
 //   S4 제자리 출발 킥: 느린 속도로는 모터가 못 출발한다 → 처음 180ms 만 세게
 //   S5 자율 동작은 kit.run() 안에서만: 정지/재시작해도 옛 루프가 안 살아난다
 //   S6 자율 동작 중 센서가 1.2초 끊기면 정지(옛값을 믿고 돌진하지 않게)
-//   S7 정지할 때 부저도 끈다
+//   S7 정지할 때 부저·불빛도 끈다 (실행 중이었으면 onRunEnd 도 부른다)
 //   S8 전송은 10Hz 고정(12대 동시 운영)
 //
 // 사용: const kit = AltinoKit.create({ appId:'t07', title:'수학 시험 보는 날', ... });
@@ -22,7 +22,7 @@
 'use strict';
 (function () {
   const P = window.AltinoProtocol, T = window.AltinoTransport;
-  const VERSION = '1.0.0';
+  const VERSION = '1.1.0';
 
   const STREAM_MS = 100;                   // S8 — 올리지 말 것
   const KICK = 400, KICK_MS = 180;         // S4
@@ -33,6 +33,12 @@
   const RECORD_MAX = 300;
 
   let created = false;                     // 한 화면에 kit 은 하나만
+
+  // 공용 데이터 이름 → 쓸 수 있는 앱 (13 문서 §공용 데이터). 읽기는 모든 앱.
+  const SHARED = {
+    faces: 't03',      // { praise|pencil|noise|fall: { feel, bytes[8] } } — t15 표정 칸
+    signals: 't05',    // { 안녕|고마워|조심해|따라와: ['ls','ll','hs','hl', …] } — t15 신호 칸
+  };
 
   // ── 신호 사전 — 15개 앱이 같은 뜻에 같은 소리·같은 도트를 쓴다 ─────────
   // 아이들은 32차시 내내 같은 로봇을 본다. 3번 앱에서 '성공'이던 소리가 9번 앱에서
@@ -119,6 +125,21 @@
     const team = {
       get() { const v = raw.get('altino.team.name'); return v ? String(v).slice(0, 12) : ''; },
       set(name) { const n = String(name || '').trim().slice(0, 12); if (n) raw.set('altino.team.name', n); else raw.del('altino.team.name'); renderBar(); },
+    };
+
+    // ── 공용 데이터 (만든 앱만 쓰고, 다른 앱은 읽기만) ─────────────────────
+    // 앱끼리는 서로의 altino.tNN.* 를 읽지 않는다(10 §6). 다른 앱에서 다시 쓸 작품만
+    // 여기 이름을 올려 'altino.share.이름' 에 둔다. 쓰기는 주인 앱만 된다.
+    const share = {
+      get(name, def) {
+        if (!SHARED[name]) return def;
+        const v = raw.get('altino.share.' + name); if (v == null) return def;
+        try { return JSON.parse(v); } catch (e) { return def; }
+      },
+      set(name, val) {
+        if (SHARED[name] !== appId) { console.warn('공용 데이터 ' + name + ' 는 ' + (SHARED[name] || '없는 이름') + ' 만 쓸 수 있어요'); return false; }
+        raw.set('altino.share.' + name, JSON.stringify(val)); return true;
+      },
     };
 
     // ── 성장기록부 (모든 앱이 쓰고 t15 졸업식이 모음) ────────────────────
@@ -223,12 +244,24 @@
     setInterval(tick, STREAM_MS);
 
     // ── S1·S7: 즉시 정지 ──────────────────────────────────────────────
+    // 바퀴·소리·불빛을 모두 끄고, 실행 중이었으면 onRunEnd 도 부른다(앱이 화면을 되돌리게).
+    // 예전엔 onRunEnd 가 안 불려 앱마다 '멈춰' 뒤에 endRun() 을 따로 불렀다 — 그래도 괜찮게
+    // onRunEnd 는 여러 번 불려도 되도록 짠다(13 문서).
     function stop() {
+      const wasRunning = running;
       runGen++; running = false;
       motion.m = 0; motion.steer = 0; lastM = 0;
       clearTimeout(soundTimer);
       sigTimers.forEach(clearTimeout); sigTimers = [];     // 재생 중인 신호도 끊는다
-      state.go(0, 0); state.steer(0); state.soundSet(0);
+      state.go(0, 0); state.steer(0); state.soundSet(0); state.ledSet(0);
+      send();
+      if (wasRunning && typeof o.onRunEnd === 'function') { try { o.onRunEnd(); } catch (e) { console.error(e); } }
+    }
+    // 소리만 끄기 — 바퀴·불빛·실행은 그대로(누르는 동안 소리 내는 건반 등)
+    function beepOff() {
+      clearTimeout(soundTimer);
+      sigTimers.forEach(clearTimeout); sigTimers = [];
+      state.soundSet(0);
       send();
     }
     function panic() {
@@ -449,10 +482,10 @@
       get connected() { return !!(transport && transport.connected); },
       get running() { return running; },
       sensorAge: () => (lastRxAt ? Date.now() - lastRxAt : Infinity),
-      drive, stop, hold, beep, led, dot, run, abortRun: stop, signal,
+      drive, stop, hold, beep, beepOff, led, dot, run, abortRun: stop, signal,
       block: (el) => { if (el) blockers.add(el); },
       isBlocked,
-      store, team, record,
+      store, team, record, share,
       toast, confirm: (opts2) => window.AltinoUI.confirm(opts2),
       openConnect, stickerCode, josa,
     };
@@ -461,5 +494,5 @@
     return api;
   }
 
-  window.AltinoKit = { VERSION, create, stickerCode, josa, SIGNALS, ICONS };
+  window.AltinoKit = { VERSION, create, stickerCode, josa, SIGNALS, ICONS, SHARED };
 })();

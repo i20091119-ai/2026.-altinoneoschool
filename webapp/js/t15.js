@@ -3,13 +3,14 @@
 // → ② 리허설·공연(칸마다 1초씩 실행, 지금 칸 강조, 친구 피드백 1가지 반영)
 // → ③ 졸업식(모든 앱의 성장기록부를 차시 순으로 되짚기, 졸업장, 한 줄 소감)
 // 다른 앱의 저장값(altino.tNN.*)은 읽지 않는다 — 성장기록부는 kit.record.list() 로만(10 §6).
+// t03 표정·t05 신호표는 kit 공용 데이터(kit.share.get('faces'|'signals'))로만 읽는다.
 'use strict';
 (function () {
   const $ = (id) => document.getElementById(id);
   let step = 1, phase = 'idle';          // idle | running | finished
   let runKind = '';                      // cell | show | grad
 
-  // LED 는 kit.stop() 으로 꺼지지 않는다 → 화면을 벗어날 때 직접 끈다.
+  // kit.stop() 이 불빛도 끈다(kit 1.1). 도트는 그대로라 화면을 벗어날 때 직접 지운다.
   // kit 보다 먼저 붙여 두면 kit 의 정지 프레임에 '꺼짐'이 함께 실린다.
   window.addEventListener('pagehide', () => { try { kit.led(0); kit.dot.clear(); } catch (e) {} });
 
@@ -17,7 +18,7 @@
     appId: 't15',
     title: '학예회·졸업식',
     onRunEnd: endRun,
-    // kit.stop()(멈춰·화면 이탈) 뒤에는 onRunEnd 가 오지 않는다 → 화면 상태를 여기서 되돌린다
+    // 혹시 onRunEnd 없이 실행이 끝난 경우의 안전망
     onTick: () => { if (!kit.running && phase === 'running') endRun(); },
   });
 
@@ -43,13 +44,42 @@
     ok:    [0x00, 0x03, 0x06, 0x0C, 0xD8, 0x70, 0x20, 0x00],
     ask:   [0x3C, 0x42, 0x02, 0x0C, 0x10, 0x10, 0x00, 0x10],
   };
-  const DOTS = [['none', '없음'], ['heart', '♥'], ['smile', '☺'], ['ok', '✓'], ['ask', '?'], ['num', '칸 번호'], ['p0', '그림1'], ['p1', '그림2'], ['p2', '그림3']];
+  const BASE_DOTS = [['none', '없음'], ['heart', '♥'], ['smile', '☺'], ['ok', '✓'], ['ask', '?'], ['num', '칸 번호'], ['p0', '그림1'], ['p1', '그림2'], ['p2', '그림3']];
+
+  // ── t03 표정 · t05 신호표 (kit 공용 데이터, 읽기만) ─────────────────
+  const okRows = (b) => Array.isArray(b) && b.length === 8 && b.every(v => Number.isInteger(v) && v >= 0 && v <= 255);
+  const FACE_IDS = ['praise', 'pencil', 'noise', 'fall'];
+  const FACE_ICON = { praise: '🖼', pencil: '✏', noise: '💥', fall: '🩹' };
+  const faces = {};                      // id → { feel, bytes }
+  (function () {
+    const f = kit.share.get('faces', {});
+    if (f && typeof f === 'object') FACE_IDS.forEach(id => { const x = f[id]; if (x && okRows(x.bytes)) faces[id] = { feel: String(x.feel || '').slice(0, 6), bytes: x.bytes.slice() }; });
+  })();
+  const DOTS = BASE_DOTS.concat(FACE_IDS.filter(id => faces[id]).map(id => ['f' + id, FACE_ICON[id] + (faces[id].feel || '표정')]));
+  const SIG_UNIT = 300;                  // t05 와 같은 길이: 짧게 1 · 길게 3 · 사이 1
+  const SIG_HORN = 42;                   // t05 경적 = 파
+  const SIG_EL = { ls: '💡·', ll: '💡—', hs: '📣·', hl: '📣—' };
+  const signals = {};                    // 뜻 → ['ls', …]
+  (function () {
+    const g = kit.share.get('signals', {});
+    if (g && typeof g === 'object') ['안녕', '고마워', '조심해', '따라와'].forEach(m => {
+      const a = Array.isArray(g[m]) ? g[m].filter(e => SIG_EL[e]).slice(0, 6) : [];
+      if (a.length) signals[m] = a;
+    });
+  })();
+  // 신호를 시간표로: [{ at, dur, kind: 'l'|'h' }], 전체 길이
+  function sigPlan(name) {
+    const a = signals[name] || []; let t = 0; const seg = [];
+    a.forEach(e => { const d = (e[1] === 'l' ? 3 : 1) * SIG_UNIT; seg.push({ at: t, dur: d, kind: e[0] }); t += d + SIG_UNIT; });
+    return { seg, len: t };
+  }
+  const sigHas = (name, kind) => (signals[name] || []).some(e => e[0] === kind);
   const DEF_PICS = [
     [0x0C, 0x0A, 0x09, 0x08, 0x08, 0x78, 0xF8, 0x70],   // ♪ 음표
     [0x18, 0x18, 0xFF, 0x7E, 0x3C, 0x7E, 0x66, 0xC3],   // ★ 별
     [0, 0, 0, 0, 0, 0, 0, 0],                           // 빈 그림(직접 그리기)
   ];
-  const blank = () => ({ m: 'S', f: 0, n: 0, l: 0, d: 'none' });
+  const blank = () => ({ m: 'S', f: 0, n: 0, l: 0, d: 'none', s: '' });
   const SAMPLE = [
     { m: 'F', f: 0, n: 37, l: 1, d: 'smile' }, { m: 'F', f: 0, n: 41, l: 1, d: 'smile' },
     { m: 'R', f: 0, n: 44, l: 0, d: 'heart' }, { m: 'L', f: 0, n: 44, l: 0, d: 'heart' },
@@ -65,6 +95,7 @@
     if (NOTES.some(n => n[0] === c.n)) b.n = c.n;
     b.l = c.l ? 1 : 0;
     if (DOTS.some(d => d[0] === c.d)) b.d = c.d;
+    if (typeof c.s === 'string' && signals[c.s]) b.s = c.s;
     return b;
   }
   function cleanCells(a) { a = Array.isArray(a) ? a : []; return Array.from({ length: CELLS }, (_, i) => cleanCell(a[i])); }
@@ -79,7 +110,7 @@
   let pic = 0;                           // 그리는 그림 번호
   let now = -1;                          // 실행 중인 칸
   let lastDone = false;                  // 방금 공연을 끝까지 했나(시계 표시)
-  const isEmpty = (c) => c.m === 'S' && !c.n && !c.l && c.d === 'none';
+  const isEmpty = (c) => c.m === 'S' && !c.n && !c.l && c.d === 'none' && !c.s;
   const showLen = () => { for (let i = CELLS - 1; i >= 0; i--) if (!isEmpty(cells[i])) return i + 1; return 0; };
   const saveCells = () => { kit.store.set('cells', cells); };
 
@@ -88,6 +119,7 @@
     if (c.d === 'none') return null;
     if (c.d === 'num') return 'num';
     if (c.d[0] === 'p') return pics[+c.d[1]];
+    if (c.d[0] === 'f') return faces[c.d.slice(1)] ? faces[c.d.slice(1)].bytes : null;
     return ICON[c.d];
   }
   function paint(cv, rows, label) {
@@ -136,7 +168,7 @@
       const c = cells[i];
       b.querySelector('.mv').textContent = MOVES[c.m].icon + (c.m !== 'S' && c.f ? '⚡' : '');
       b.querySelector('.nt').textContent = c.n ? '♪' + noteName(c.n) : '';
-      b.querySelector('.lt').textContent = c.l ? '💡' : '';
+      b.querySelector('.lt').textContent = (c.l ? '💡' : '') + (c.s ? '🚦' + c.s : '');
       paint(b.querySelector('canvas'), rowsOf(c, i), String(i + 1));
       b.classList.toggle('filled', !isEmpty(c));
       b.classList.toggle('after', i >= len && !(withSel && i === sel));
@@ -161,8 +193,12 @@
     $('cDot').innerHTML = '';
     DOTS.forEach(([k, nm]) => {
       const b = chip($('cDot'), k === 'none' || k === 'num' ? nm : `<canvas width="48" height="48"></canvas>${nm.length > 1 ? nm : ''}`, c.d === k, () => { c.d = k; });
-      const cv = b.querySelector('canvas'); if (cv) paint(cv, k[0] === 'p' ? pics[+k[1]] : ICON[k], '');
+      const cv = b.querySelector('canvas'); if (cv) paint(cv, k[0] === 'p' ? pics[+k[1]] : k[0] === 'f' ? faces[k.slice(1)].bytes : ICON[k], '');
     });
+    $('cSig').innerHTML = '';
+    const names = Object.keys(signals);
+    if (!names.length) $('cSig').innerHTML = '<span class="lead">t05 비밀 신호 보내기에서 만든 신호를 여기서 쓸 수 있어요</span>';
+    else [['', '없음']].concat(names.map(m => [m, m])).forEach(([k, nm]) => chip($('cSig'), k ? `${nm}<small>${signals[k].map(e => SIG_EL[e]).join('')}</small>` : nm, c.s === k, () => { c.s = k; }));
     $('cSpeed').style.opacity = c.m === 'S' ? 0.45 : 1;
   }
   $('copyPrev').onclick = () => { if (phase === 'running' || sel === 0) return; cells[sel] = Object.assign({}, cells[sel - 1]); saveCells(); render(); };
@@ -224,19 +260,36 @@
       phase = 'running'; runKind = kind; now = -1; lastDone = false; render();
       kit.signal('start'); say('준비…');
       if (!await r.sleep(1000)) return;                  // 손을 로봇에서 뗄 시간 (05 §7)
+      // 신호(t05)는 그 칸에서 시작해 다음 칸까지 이어질 수 있다. 신호가 도는 동안은
+      // 신호가 불빛·소리를 맡는다(칸의 💡·음은 쉼). 움직임·표정은 칸대로.
+      let sig = null;                    // { plan, t0, horn: 마지막으로 울린 경적 칸 }
+      const sigTick = (ledAfter) => {
+        if (!sig) return;
+        const t = performance.now() - sig.t0;
+        if (t >= sig.plan.len) { sig = null; kit.led(ledAfter); return; }
+        const k = sig.plan.seg.findIndex(g => t >= g.at && t < g.at + g.dur), g = sig.plan.seg[k];
+        kit.led(g && g.kind === 'l' ? LED_ON : 0);
+        if (g && g.kind === 'h' && sig.horn !== k) { sig.horn = k; kit.beep(SIG_HORN, g.at + g.dur - t); }
+      };
       for (let i = from; i < to; i++) {
         const c = cells[i]; now = i; render();
-        say(`${i + 1}초: ${MOVES[c.m].name}${c.n ? ' · ' + noteName(c.n) : ''}${c.l ? ' · 💡' : ''}`);
-        kit.led(c.l ? LED_ON : 0); showDot(c, i);
-        if (c.n) kit.beep(c.n, NOTE_MS);
+        if (c.s) sig = { plan: sigPlan(c.s), t0: performance.now(), horn: -1 };
+        say(`${i + 1}초: ${MOVES[c.m].name}${c.n ? ' · ' + noteName(c.n) : ''}${c.l ? ' · 💡' : ''}${c.s ? ' · 🚦' + c.s : ''}`);
+        showDot(c, i);
+        const sigOn = () => sig && performance.now() - sig.t0 < sig.plan.len;
+        if (!sigOn()) { kit.led(c.l ? LED_ON : 0); if (c.n) kit.beep(c.n, NOTE_MS); }
         const sp = SPEEDS[c.f].v;
         const mv = c.m === 'F' ? [sp, 0] : c.m === 'B' ? [-sp, 0] : c.m === 'L' ? [sp, -127] : c.m === 'R' ? [sp, 127] : [0, 0];
         const t0 = performance.now();
         while (performance.now() - t0 < CELL_MS) {
           r.drive(mv[0], mv[1]);
+          sigTick(c.l ? LED_ON : 0);
           if (!await r.sleep(50)) return;
         }
       }
+      // 마지막 칸이 끝나도 신호가 남았으면 제자리에서 끝까지 보낸다
+      r.drive(0, 0);
+      while (sig) { sigTick(0); if (!await r.sleep(50)) return; }
       r.drive(0, 0); kit.led(0);
       phase = 'finished';
     });
@@ -253,7 +306,7 @@
   $('editBtn').onclick = () => showStep(1);
 
   function endRun() {
-    kit.led(0);                         // kit.stop() 은 LED 를 끄지 않는다
+    kit.led(0);                         // 끝까지 간 공연도 불을 끄고 마친다
     const kind = runKind; now = -1; runKind = '';
     if (phase === 'finished') { phase = 'idle'; afterRun(kind); return; }
     if (phase === 'running') { phase = 'idle'; kit.dot.clear(); say(kind === 'grad' ? '멈췄어요.' : '멈췄어요. 제자리에 놓고 다시 해 봐요.'); }
@@ -263,7 +316,7 @@
   // ── 별 기준 (② 공연) ─────────────────────────────────────────────
   function used() {
     const len = showLen(), a = cells.slice(0, len);
-    return { move: a.some(c => c.m !== 'S'), sound: a.some(c => c.n), light: a.some(c => c.l), dot: a.some(c => c.d !== 'none') };
+    return { move: a.some(c => c.m !== 'S'), sound: a.some(c => c.n || (c.s && sigHas(c.s, 'h'))), light: a.some(c => c.l || (c.s && sigHas(c.s, 'l'))), dot: a.some(c => c.d !== 'none') };
   }
   function checks() {
     const u = used(), all4 = u.move && u.sound && u.light && u.dot;

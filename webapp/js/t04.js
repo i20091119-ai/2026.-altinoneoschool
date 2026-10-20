@@ -221,8 +221,8 @@
     const b = document.createElement('button'); b.innerHTML = `<b>${x.n}</b>`;
     b.style.borderBottom = `6px solid hsl(${200 - i * 22},70%,60%)`;
     $('keys3').appendChild(b);
-    // 누르는 동안만 길게 — 떼면 소리를 끈다(바퀴는 쓰지 않으니 kit.stop 으로 끔)
-    holds.push(kit.hold(b, () => { ours = i; kit.stop(); kit.beep(x.c, 6000); renderPairs(); }, () => kit.stop()));   // 먼저 stop: 울리던 신호음이 이 소리를 끄지 않게
+    // 누르는 동안만 길게 — 떼면 소리만 끈다(kit.beepOff)
+    holds.push(kit.hold(b, () => { ours = i; kit.beepOff(); kit.beep(x.c, 6000); renderPairs(); }, () => kit.beepOff()));   // 먼저 끔: 울리던 신호음이 이 소리를 끄지 않게
     const c = document.createElement('button'); c.textContent = x.n; c.dataset.i = i;
     c.onclick = () => { theirs = i; renderPairs(); };
     $('pairs').appendChild(c);
