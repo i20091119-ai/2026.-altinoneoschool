@@ -85,6 +85,7 @@ await p.click('#lockP'); await p.click('#runBtn'); await p.waitForTimeout(1700);
 ok('달리는 중 ■ 멈춰 버튼이 보임', await p.isVisible('#stopBtn'));
 await p.click('#stopBtn'); await p.waitForTimeout(300);
 ok('■ 멈춰를 누르면 바로 정지', (await tail(2)).every(v => v === 0), JSON.stringify(await tail(2)));
+ok('■ 멈춰 뒤 화면이 되돌아옴(▶ 3초 달리기 다시 보임)', await p.isVisible('#runBtn') && !(await p.isVisible('#stopBtn')));
 await p.waitForTimeout(2000);
 ok('멈춘 뒤 다시 움직이지 않음(S5)', (await tail(10)).every(v => v === 0), JSON.stringify(await tail(10)));
 
