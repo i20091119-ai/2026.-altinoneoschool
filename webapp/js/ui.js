@@ -13,6 +13,20 @@
 //                                okText:'새 판 시작', danger:true })) { ... }
 // ═══════════════════════════════════════════════════════════════════
 'use strict';
+
+// ── 작은 화면 맞춤 ─────────────────────────────────────────────────
+// 앱 화면은 태블릿(1280×800) 기준으로 짰다. 스마트폰 가로(높이 약 400)나 7~8인치 태블릿
+// (높이 약 600)에서는 아래쪽 버튼(■ 멈춰 포함)이 화면 밖으로 밀려 안 보였다.
+// 높이가 FIT_H 보다 낮으면 화면 폭을 그 비율만큼 넓게 잡아 페이지 전체를 줄여 보여 준다
+// (WebView 의 useWideViewPort·loadWithOverviewMode 가 폭에 맞춰 축소). 태블릿에서는 그대로.
+(function fitSmallScreen() {
+  const FIT_H = 720;
+  const m = document.querySelector('meta[name="viewport"]');
+  const w = window.innerWidth, h = window.innerHeight;
+  if (!m || !w || !h || h >= FIT_H || w < h) return;   // 세로 화면은 건드리지 않음
+  m.setAttribute('content', 'width=' + Math.round(w * FIT_H / h) + ', user-scalable=no');
+})();
+
 (function () {
   let ov = null, resolver = null, shownAt = 0;
 
