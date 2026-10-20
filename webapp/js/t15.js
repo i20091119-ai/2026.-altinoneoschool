@@ -49,13 +49,20 @@
   // ── t03 표정 · t05 신호표 (kit 공용 데이터, 읽기만) ─────────────────
   const okRows = (b) => Array.isArray(b) && b.length === 8 && b.every(v => Number.isInteger(v) && v >= 0 && v <= 255);
   const FACE_IDS = ['praise', 'pencil', 'noise', 'fall'];
-  const FACE_ICON = { praise: '🖼', pencil: '✏', noise: '💥', fall: '🩹' };
   const faces = {};                      // id → { feel, bytes }
   (function () {
     const f = kit.share.get('faces', {});
     if (f && typeof f === 'object') FACE_IDS.forEach(id => { const x = f[id]; if (x && okRows(x.bytes)) faces[id] = { feel: String(x.feel || '').slice(0, 6), bytes: x.bytes.slice() }; });
   })();
-  const DOTS = BASE_DOTS.concat(FACE_IDS.filter(id => faces[id]).map(id => ['f' + id, FACE_ICON[id] + (faces[id].feel || '표정')]));
+  // t03 을 아직 안 했으면 예시 표정 4장 — t15 를 먼저 해도 표정 칸을 써 볼 수 있게(공용 데이터엔 안 씀)
+  const sampleFaces = !Object.keys(faces).length;
+  if (sampleFaces) Object.assign(faces, {
+    praise: { feel: '기쁨', bytes: [0x3C, 0x42, 0xA5, 0x81, 0xA5, 0x99, 0x42, 0x3C] },
+    pencil: { feel: '슬픔', bytes: [0x3C, 0x42, 0xA5, 0x81, 0x99, 0xA5, 0x42, 0x3C] },
+    noise:  { feel: '놀람', bytes: [0x3C, 0x42, 0xA5, 0x81, 0x99, 0x99, 0x42, 0x3C] },
+    fall:   { feel: '걱정', bytes: [0x3C, 0x42, 0xA5, 0x81, 0xBD, 0x81, 0x42, 0x3C] },
+  });
+  const DOTS = BASE_DOTS.concat(FACE_IDS.filter(id => faces[id]).map(id => ['f' + id, `<small>${faces[id].feel || '표정'}${sampleFaces ? '·예시' : ''}</small>`]));
   const SIG_UNIT = 300;                  // t05 와 같은 길이: 짧게 1 · 길게 3 · 사이 1
   const SIG_HORN = 42;                   // t05 경적 = 파
   const SIG_EL = { ls: '💡·', ll: '💡—', hs: '📣·', hl: '📣—' };
@@ -67,6 +74,9 @@
       if (a.length) signals[m] = a;
     });
   })();
+  // t05 를 아직 안 했으면 예시 신호표 — 같은 이유(공용 데이터엔 안 씀)
+  const sampleSigs = !Object.keys(signals).length;
+  if (sampleSigs) Object.assign(signals, { 안녕: ['ls', 'ls'], 고마워: ['ll', 'hs'], 조심해: ['hs', 'hs', 'hs'], 따라와: ['ll', 'ls', 'll'] });
   // 신호를 시간표로: [{ at, dur, kind: 'l'|'h' }], 전체 길이
   function sigPlan(name) {
     const a = signals[name] || []; let t = 0; const seg = [];
@@ -82,7 +92,7 @@
   const blank = () => ({ m: 'S', f: 0, n: 0, l: 0, d: 'none', s: '' });
   const SAMPLE = [
     { m: 'F', f: 0, n: 37, l: 1, d: 'smile' }, { m: 'F', f: 0, n: 41, l: 1, d: 'smile' },
-    { m: 'R', f: 0, n: 44, l: 0, d: 'heart' }, { m: 'L', f: 0, n: 44, l: 0, d: 'heart' },
+    { m: 'R', f: 0, n: 44, l: 0, d: 'fpraise' }, { m: 'L', f: 0, n: 0, l: 0, d: 'heart', s: '안녕' },
     { m: 'S', f: 0, n: 46, l: 1, d: 'p0' },    { m: 'S', f: 0, n: 44, l: 0, d: 'p0' },
     { m: 'B', f: 0, n: 41, l: 1, d: 'p1' },    { m: 'S', f: 0, n: 49, l: 1, d: 'ok' },
   ];
@@ -192,13 +202,15 @@
     $('cLight').innerHTML = ''; [[0, '끔'], [1, '💡 켬']].forEach(([v, nm]) => chip($('cLight'), nm, c.l === v, () => { c.l = v; }));
     $('cDot').innerHTML = '';
     DOTS.forEach(([k, nm]) => {
-      const b = chip($('cDot'), k === 'none' || k === 'num' ? nm : `<canvas width="48" height="48"></canvas>${nm.length > 1 ? nm : ''}`, c.d === k, () => { c.d = k; });
+      const b = chip($('cDot'), k === 'none' || k === 'num' ? nm : `<canvas width="${k[0] === 'f' ? 40 : 48}" height="${k[0] === 'f' ? 40 : 48}"></canvas>${nm.length > 1 ? nm : ''}`, c.d === k, () => { c.d = k; });
       const cv = b.querySelector('canvas'); if (cv) paint(cv, k[0] === 'p' ? pics[+k[1]] : k[0] === 'f' ? faces[k.slice(1)].bytes : ICON[k], '');
     });
     $('cSig').innerHTML = '';
     const names = Object.keys(signals);
-    if (!names.length) $('cSig').innerHTML = '<span class="lead">t05 비밀 신호 보내기에서 만든 신호를 여기서 쓸 수 있어요</span>';
-    else [['', '없음']].concat(names.map(m => [m, m])).forEach(([k, nm]) => chip($('cSig'), k ? `${nm}<small>${signals[k].map(e => SIG_EL[e]).join('')}</small>` : nm, c.s === k, () => { c.s = k; }));
+    [['', '없음']].concat(names.map(m => [m, m])).forEach(([k, nm]) => chip($('cSig'), k ? `${nm}<small>${signals[k].map(e => SIG_EL[e]).join('')}</small>` : nm, c.s === k, () => { c.s = k; }));
+    $('edHint').textContent = sampleFaces || sampleSigs
+      ? `${kit.josa([sampleFaces && '표정', sampleSigs && '신호'].filter(Boolean).join('·'), '은는')} 지금 예시예요. ${[sampleFaces && 't03 표정 만들기', sampleSigs && 't05 비밀 신호 보내기'].filter(Boolean).join('·')}를 하면 우리 모둠 것으로 바뀌어요.`
+      : '표정은 t03, 신호는 t05 에서 우리 모둠이 만든 거예요. 소리는 알티노가 낼 수 있는 8음만 있어요.';
     $('cSpeed').style.opacity = c.m === 'S' ? 0.45 : 1;
   }
   $('copyPrev').onclick = () => { if (phase === 'running' || sel === 0) return; cells[sel] = Object.assign({}, cells[sel - 1]); saveCells(); render(); };

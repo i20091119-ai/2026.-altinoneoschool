@@ -40,6 +40,12 @@ const idle = async (btn, ms) => p.waitForSelector('#' + btn, { state: 'visible',
 
 // ── ① 공연 만들기 ────────────────────────────────────────────────
 ok('① 스토리보드 16칸', (await p.$$eval('#board1 .cell', a => a.length)) === 16);
+// t03·t05 를 안 했어도 예시 표정·신호로 써 볼 수 있음(공용 데이터엔 안 씀)
+const exDots = await p.$$eval('#cDot button', a => a.map(b => b.textContent));
+const exSigs = await p.$$eval('#cSig button', a => a.map(b => b.textContent));
+ok('t03·t05 전: 예시 표정 4장·예시 신호 4개', exDots.filter(t => t.includes('예시')).length === 4 && exSigs.length === 5, exDots.join(',') + ' / ' + exSigs.join(','));
+ok('예시라고 안내', (await p.textContent('#edHint')).includes('표정·신호는 지금 예시'), await p.textContent('#edHint'));
+ok('예시는 공용 데이터에 쓰지 않음', await p.evaluate(() => !localStorage.getItem('altino.share.faces') && !localStorage.getItem('altino.share.signals')));
 await chip('cMove', 2); await chip('cNote', 2); await chip('cLight', 2); await chip('cDot', 2);
 let cells = await store('altino.t15.cells');
 ok('1번 칸: 앞으로 · 도(37) · 💡 · ♥ 저장', cells && cells[0].m === 'F' && cells[0].n === 37 && cells[0].l === 1 && cells[0].d === 'heart', JSON.stringify(cells && cells[0]));
@@ -123,6 +129,7 @@ ok('t05 신호가 신호 칸에 나옴(빈 신호는 뺌)', sigNames.length === 
 await q.click('#cDot button:has-text("기쁨")'); await q.click('#cSig button:nth-child(2)'); await q.waitForTimeout(100);
 const c0 = (await qstore('altino.t15.cells'))[0];
 ok('칸에 t03 표정·t05 신호 저장', c0.d === 'fpraise' && c0.s === '안녕', JSON.stringify(c0));
+ok('t03·t05 를 했으면 예시가 아니라 우리 것', !dotNames.some(t => t.includes('예시')) && !sigNames.some(t => t.includes('예시')) && !(await q.textContent('#edHint')).includes('예시'));
 await q.evaluate(() => { window.__tx.length = 0; window.__txFrames.length = 0; });
 await q.click('#tryCell'); await q.waitForTimeout(1500);
 const qf = () => q.evaluate(() => { const f = window.__txFrames.at(-1); return { snd: f[19], led: (f[20] << 8) | f[21], dot: Array.from(f.slice(11, 19)) }; });
