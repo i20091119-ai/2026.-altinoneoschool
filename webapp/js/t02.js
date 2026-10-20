@@ -124,7 +124,7 @@
     });
     if (!ok) kit.toast('이미 움직이는 중이에요');
   };
-  $('stopBtn').onclick = () => { kit.stop(); };
+  $('stopBtn').onclick = () => { kit.stop(); endRun(); };   // kit.stop 은 onRunEnd 를 부르지 않는다 — 화면을 직접 되돌림
   function endRun() {
     if (runPhase === 'running') { runPhase = 'idle'; $('runMsg').textContent = '멈췄어요. 다시 달려 볼까요?'; }
     renderExp();
