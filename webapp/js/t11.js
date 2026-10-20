@@ -1,5 +1,5 @@
-// t11 순서대로 기억시키기 (21–22차시) — 기획서 docs/topics/t11.md
-// ① 사람 로봇 놀이(명령 카드를 놓고 한 장씩 읽기 — 로봇은 안 움직임) → ② 블록으로 기억시키기(한 칸 맞추기,
+// t11 순서대로 길 안내하기 (21–22차시) — 기획서 docs/topics/t11.md
+// ① 사람 로봇 놀이(명령 카드를 놓고 한 장씩 읽기 — 로봇은 안 움직임) → ② 블록으로 길 안내하기(한 칸 맞추기,
 // 블록 실행, 되풀이 규칙 찾기) → ③ 버그 고치기 미션(틀린 순서를 실행해 보고 고치기, 미션 3개)
 // ❗ 회전 센서·자이로가 없어 '한 칸'·'돌기'는 시간으로만 만든다(03 §10). 로봇별 보정은 이 앱의 저장값(cal)에 —
 //    t14 와 공용(kit)으로 할지는 열린 결정(10 §7-4).
@@ -9,7 +9,7 @@
 
   const kit = AltinoKit.create({
     appId: 't11',
-    title: '순서대로 기억시키기',
+    title: '순서대로 길 안내하기',
     onRunEnd: endRun,
     onTick: () => { if (running && !kit.running) endRun(); },   // kit.stop()·화면 이탈로 끝난 실행 정리
   });
@@ -278,7 +278,7 @@
 
   function render2() {
     const m3 = step === 3, seq = curSeq(), g = curGoal();
-    $('edTitle').textContent = m3 ? '🐞 버그를 그대로 실행해 보고, 블록을 고쳐요' : '🧱 블록을 순서대로 놓아 길을 기억시켜요';
+    $('edTitle').textContent = m3 ? '🐞 버그를 그대로 실행해 보고, 블록을 고쳐요' : '🧱 블록을 순서대로 놓아 길을 안내해요';
     $('missionChips').classList.toggle('hidden', !m3);
     document.querySelectorAll('#missionChips button').forEach(b => { const i = +b.dataset.i; b.classList.toggle('on', i === mi); b.classList.toggle('done', !!mis[i].solved); });
     ed2.render();
@@ -334,7 +334,7 @@
     if (stars <= best) return;           // 기록부에는 가장 좋은 결과 한 줄만 (05 §7)
     kit.store.set('bestStars', stars);
     kit.record.add({
-      title: stars === 3 ? '버그를 모두 고쳤어요' : '블록으로 길을 기억시켰어요',
+      title: stars === 3 ? '버그를 모두 고쳤어요' : '블록으로 길을 안내했어요',
       detail: [done2 && `코스 완주 ${done2.seq}`, done2 && done2.rep, solved && `미션 ${solved}개 해결`].filter(Boolean).join(' · '),
       stars,
     });
