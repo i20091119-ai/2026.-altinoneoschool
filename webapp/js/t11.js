@@ -19,6 +19,10 @@
   const GAP_MS = 300;           // 블록 사이 쉼 — 아이들이 눈으로 따라갈 수 있게
   const MAX_BLOCKS = 12;
   const SYM = { F: '↑', L: '←', R: '→' };
+  // 블록 그림 = 수업에서 쓰는 노란 화살표 카드(활동지·PPT 와 같은 그림)
+  const IMG = { F: 'assets/t11/up.png', L: 'assets/t11/left.png', R: 'assets/t11/right.png' };
+  // 그림 옆에 화살표 글자를 숨겨 둔다(읽기 도구·시험이 순서를 글자로 읽는다)
+  const card = (b) => `<img class="ar" src="${IMG[b]}" alt=""><span class="sr">${SYM[b]}</span>`;
   const NAME = { F: '앞으로 한 칸', L: '왼쪽으로 돌기', R: '오른쪽으로 돌기' };
   // 격자: x = -1~3 (5칸), y = 0~3 (4칸). 출발 (0,0) 위쪽을 보고 시작. 방향 0=위 1=오른쪽 2=아래 3=왼쪽
   const X0 = -1, X1 = 3, Y1 = 3, START = { x: 0, y: 0, d: 0 };
@@ -80,7 +84,7 @@
     let sel = -1, now = -1, locked = false;
     ['F', 'L', 'R'].forEach(b => {
       const el = document.createElement('button'); el.dataset.b = b;
-      el.innerHTML = `<b>${SYM[b]}</b>${NAME[b]}`;
+      el.innerHTML = `${card(b)}${NAME[b]}`;
       el.onclick = () => {
         if (locked) return;
         const s = getSeq(); if (s.length >= MAX_BLOCKS) { kit.toast(`블록은 ${MAX_BLOCKS}개까지 놓을 수 있어요`); return; }
@@ -110,7 +114,7 @@
         strip.innerHTML = s.length ? '' : '<span class="empty">위의 블록을 눌러 순서대로 놓아요</span>';
         s.forEach((b, i) => {
           const el = document.createElement('button'); el.dataset.i = i;
-          el.innerHTML = `<i>${i + 1}</i>${SYM[b]}`;
+          el.innerHTML = `<i>${i + 1}</i>${card(b)}`;
           el.className = (i === sel && !locked ? 'sel ' : '') + (i === now ? 'now ' : '') + (now >= 0 && i < now ? 'done' : '');
           el.onclick = () => { if (locked) return; sel = sel === i ? -1 : i; onChange(); };
           strip.appendChild(el);

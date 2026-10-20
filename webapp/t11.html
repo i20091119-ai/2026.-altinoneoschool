@@ -43,6 +43,9 @@
   .palette{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
   .palette button{min-height:64px;border-radius:16px;border:2px solid var(--line);background:#fff;font-family:inherit;font-size:1rem;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:var(--shadow)}
   .palette button b{font-size:1.7rem;line-height:1}
+  .palette button img.ar{width:46px;height:46px;border-radius:8px;display:block}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .strip button img.ar{width:36px;height:36px;border-radius:6px;display:block;margin:auto;pointer-events:none}
   .strip{display:flex;flex-wrap:wrap;gap:6px;min-height:66px;padding:8px;border-radius:14px;background:var(--cream);border:2px dashed var(--line);align-content:flex-start}
   .strip button{width:50px;height:50px;border-radius:12px;border:2px solid var(--line);background:#fff;font-size:1.6rem;font-family:inherit;position:relative;cursor:pointer}
   .strip button.sel{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue) inset}
@@ -68,6 +71,8 @@
   .stepper{display:flex;align-items:center;gap:8px;justify-content:center}
   .stepper button{width:58px;height:52px;font-size:1.5rem;border-radius:12px;border:2px solid var(--line);background:#fff;font-family:inherit}
   .stepper b{font-size:1.6rem;min-width:3.4ch;text-align:center}
+  /* '해 보기' 버튼은 − + 네모 크기를 받지 않는다(태블릿에서 글자가 잘려 빈 상자로 보였다) */
+  .stepper button.btn{width:auto;height:auto;min-height:52px;font-size:1.05rem;padding:10px 16px;border:0;background:var(--blue);color:#fff;border-radius:16px;white-space:nowrap}
   .judge{display:flex;gap:10px;justify-content:center}
   .big{font-size:1.15rem;padding:13px 20px}
 </style>
