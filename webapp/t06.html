@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>t06 손길 알아채기 — 알티노 로봇 학교</title>
+<style>
+  /* ★ 공통 스타일 */
+  @font-face{font-family:'Esamanru';src:url('fonts/esamanru-light.woff2') format('woff2');font-weight:300;font-display:swap}
+  @font-face{font-family:'Esamanru';src:url('fonts/esamanru-medium.woff2') format('woff2');font-weight:500;font-display:swap}
+  @font-face{font-family:'Esamanru';src:url('fonts/esamanru-bold.woff2') format('woff2');font-weight:700;font-display:swap}
+  :root{--cream:#fff7ea;--ink:#3a3230;--mut:#9b8f86;--mint:#37c9ad;--sun:#ffb23e;--coral:#ff7a86;--blue:#5ea0ff;--grape:#b085ff;--line:#f0e6d8;--card:#fff;--shadow:0 8px 24px rgba(120,90,50,.12);--r:20px}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;margin:0}
+  body{font-family:'Esamanru','Pretendard',system-ui,sans-serif;font-weight:500;color:var(--ink);
+    background:linear-gradient(rgba(255,247,234,.55),rgba(255,247,234,.55)), url('assets/bg.png') center/cover no-repeat, var(--cream);
+    height:100vh;overflow:hidden;user-select:none;padding:10px 16px;display:flex;flex-direction:column;gap:8px}
+  h1,h2,b{font-weight:700}
+  .hidden{display:none !important}
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .topbar a{color:var(--blue);text-decoration:none;font-size:1.05rem}
+  .btn{border:0;border-radius:16px;font-family:inherit;font-size:1.05rem;padding:12px 18px;cursor:pointer;background:var(--blue);color:#fff;box-shadow:var(--shadow)}
+  .btn:active{transform:translateY(2px)}.btn.ghost{background:#fff;color:var(--ink);border:2px solid var(--line);box-shadow:none}
+  .btn.mint{background:var(--mint)}.btn.coral{background:var(--coral)}.btn.sun{background:var(--sun);color:#5a3200}.btn:disabled{opacity:.45}
+  /* ⚠ 카드는 overflow:hidden. 조종 패드가 스크롤되는 상자 안에 있으면 버튼을 누른 채
+       손가락이 조금만 움직여도 터치가 취소된다(정밀주차에서 실제로 난 버그). */
+  .stage{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  .card{background:var(--card);border:2px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);
+    padding:12px 16px;overflow:hidden;min-height:0;display:flex;flex-direction:column;gap:8px}
+  .card h2{margin:0;font-size:1.05rem}
+  .lead{color:var(--mut);font-size:.88rem;margin:0}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  /* ★ 조종 패드 — kit.hold() 가 touch-action:none 과 포인터 캡처를 붙인다 */
+  .card.center>h2+*{margin-top:auto}.card.center>:last-child{margin-bottom:auto}
+  .page .pad{max-width:420px}
+  .pad{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);gap:10px;width:100%;max-width:330px;margin:4px auto 0}
+  .pad button{font-size:2rem;padding:20px 0;border-radius:18px;border:2px solid var(--line);background:#fff;box-shadow:var(--shadow);font-family:inherit}
+  .pad button.pressed{background:var(--mint);color:#fff;transform:translateY(2px)}
+  .pad .up{grid-column:2;grid-row:1}.pad .left{grid-column:1;grid-row:2}.pad .down{grid-column:2;grid-row:2}.pad .right{grid-column:3;grid-row:2}
+  /* ✎ 공통(이 앱) — 단계 표시 */
+  .steps{display:flex;gap:8px}
+  .steps button{flex:1;border:2px solid var(--line);background:#fff;border-radius:14px;padding:9px 0;font-family:inherit;font-size:1.02rem;color:var(--mut);cursor:pointer}
+  .steps button.on{background:var(--mint);border-color:var(--mint);color:#fff}
+  .stage{grid-template-columns:1fr 1fr}
+  .page{display:contents}
+  .say{text-align:center;font-size:1.1rem;margin:0}
+  .big{font-size:1.4rem}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chips button{flex:1;min-width:64px;min-height:52px;border-radius:14px;border:2px solid var(--line);background:#fff;font-family:inherit;font-size:1.02rem;cursor:pointer}
+  .chips button.on{border-color:var(--blue);background:var(--blue);color:#fff}
+  .chips button.done::after{content:' ✓';color:var(--mint)}
+  .chips button.on.done::after{color:#fff}
+  .tries{display:flex;gap:12px;justify-content:center}
+  .tries span{width:56px;height:56px;border-radius:50%;border:4px dashed var(--line);display:flex;align-items:center;justify-content:center;font-size:1.8rem}
+  .tries span.ok{border:4px solid var(--mint);color:var(--mint)}.tries span.no{border:4px solid var(--coral);color:var(--coral)}
+  .judge{display:flex;gap:10px;justify-content:center}
+  .judge .btn{font-size:1.2rem;padding:14px 24px}
+  .result{text-align:center;font-size:1.25rem}
+  .result .m{font-size:3.4rem;display:block}
+  .modal{position:fixed;inset:0;background:rgba(20,20,30,.55);display:flex;align-items:center;justify-content:center;z-index:50}
+  .sheet{background:#fff;border-radius:22px;padding:24px 28px;width:min(560px,92vw);text-align:center;display:flex;flex-direction:column;gap:12px}
+  /* ✎ t06 화면 */
+  .carmap{position:relative;width:300px;height:330px;margin:4px auto}
+  .carmap .body{position:absolute;left:85px;top:55px;width:130px;height:220px;border-radius:40px 40px 24px 24px;background:#dfe9f7;border:3px solid #b9c7da;display:flex;align-items:center;justify-content:center;font-size:2.4rem}
+  .sen{position:absolute;width:84px;padding:4px 0;border-radius:12px;border:2px solid var(--line);background:#fff;text-align:center;font-size:.8rem;line-height:1.25;box-shadow:var(--shadow)}
+  .sen b{display:block;font-size:1.2rem}
+  .sen.hot{border-color:var(--sun);background:#fff6e6}
+  .sen.found{border-color:var(--mint)}
+  .sen.found::after{content:'✓';position:absolute;right:6px;top:2px;color:var(--mint)}
+  .s1{left:10px;top:0}.s2{left:108px;top:-6px}.s3{left:206px;top:0}.s5{left:0;top:140px}.s4{left:216px;top:140px}.s6{left:108px;top:282px}
+  .flist{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .flist li{border:2px dashed var(--line);border-radius:12px;padding:8px 10px;font-size:1rem}
+  .flist li.found{border:2px solid var(--mint);background:#effbf8}
+  .gauge{position:relative;height:56px;border-radius:14px;background:#f3ede4;overflow:hidden}
+  .gauge .zone{position:absolute;top:0;bottom:0;background:rgba(55,201,173,.35);border-left:3px solid var(--mint);border-right:3px solid var(--mint)}
+  .gauge .needle{position:absolute;top:0;bottom:0;width:6px;margin-left:-3px;background:var(--ink);border-radius:3px}
+  .scale{display:flex;justify-content:space-between;font-size:.8rem;color:var(--mut)}
+  .holdbar{height:14px;border-radius:7px;background:#f3ede4;overflow:hidden}.holdbar i{display:block;height:100%;width:0;background:var(--mint)}
+  .bignum{font-size:3rem;font-weight:700;text-align:center;margin:0}
+  .courses{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .courses button{border:2px solid var(--line);border-radius:16px;background:#fff;padding:10px 4px;font-family:inherit;font-size:1rem;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+  .courses button .m{font-size:1.9rem}
+  .courses button.on{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue) inset}
+  .courses button.done::after{content:'합격 ✓';color:var(--mint);font-size:.85rem}
+  .status{display:flex;gap:10px;justify-content:center;align-items:center;font-size:1.3rem}
+  .status .arrow{font-size:2.6rem;width:70px;text-align:center}
+  .zones{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .zones span{border:2px solid var(--line);border-radius:12px;padding:8px 4px;text-align:center;font-size:.95rem}
+  .zones span.on{border-color:var(--sun);background:#fff6e6}
+  .set{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;text-align:left}
+  .set .stp{display:flex;align-items:center;gap:6px}
+  .set .stp button{width:46px;height:42px;border-radius:10px;border:2px solid var(--line);background:#fff;font-size:1.2rem}
+  .set .stp b{min-width:3.5ch;text-align:center}
+  .card.center>.btn{align-self:center;min-width:240px}
+</style>
+</head>
+<body>
+
+<!-- ★ 상단바 -->
+<div class="topbar">
+  <div class="row">
+    <a href="school.html">← 로봇학교</a>
+    <h1 style="margin:0;font-size:1.25rem">✋ 손길 알아채기 <span class="lead" style="display:inline">11–12차시 · 적외선 거리 센서</span></h1>
+  </div>
+  <div id="kitBar"></div>
+</div>
+
+<!-- ✎ 단계 표시 -->
+<div class="steps" id="steps">
+  <button data-step="1">① 센서 지도 만들기</button>
+  <button data-step="2">② 숫자 맞추기</button>
+  <button data-step="3">③ 손 따라오기 시험</button>
+  <button data-step="4">④ 더 해 보기</button>
+</div>
+
+<div class="stage">
+
+  <!-- ① 센서 지도 -->
+  <div class="page" data-page="1">
+    <section class="card center">
+      <h2>🗺 알티노의 눈은 어디에? — 손을 가까이 대 봐요</h2>
+      <div class="carmap">
+        <div class="body">🚗</div>
+        <div class="sen s1" data-k="ir1"></div><div class="sen s2" data-k="ir2"></div><div class="sen s3" data-k="ir3"></div>
+        <div class="sen s5" data-k="ir5"></div><div class="sen s4" data-k="ir4"></div><div class="sen s6" data-k="ir6"></div>
+      </div>
+      <p class="say">숫자는 가까울수록 작아져요</p>
+    </section>
+    <section class="card">
+      <h2>✅ 찾은 센서</h2>
+      <ul class="flist" id="flist"></ul>
+      <p class="say" id="foundMsg">찾은 센서 0 / 6</p>
+      <p class="lead">눈으로 보고, 손으로 만져 보고, 숫자로 확인해요. 활동지 그림에도 표시해요.</p>
+      <div class="row" style="justify-content:flex-end"><button id="mapReset" class="btn ghost">처음부터</button></div>
+    </section>
+  </div>
+
+  <!-- ② 숫자 맞추기 -->
+  <div class="page hidden" data-page="2">
+    <section class="card">
+      <h2>🎯 앞 가운데 센서 숫자를 목표 안에 1초 동안!</h2>
+      <p class="bignum" id="liveNum">–</p>
+      <div class="gauge" id="gauge"><div class="zone" id="zone"></div><div class="needle" id="needle"></div></div>
+      <div class="scale"><span>0 가까움</span><span>500</span><span>1000 멀리</span></div>
+      <div class="holdbar"><i id="holdbar"></i></div>
+      <p class="say" id="gameMsg">▶ 새 목표를 눌러요.</p>
+    </section>
+    <section class="card center">
+      <h2>🏁 목표</h2>
+      <p class="bignum" id="target">–</p>
+      <div class="row" style="justify-content:center"><button id="newTarget" class="btn mint big">▶ 새 목표</button></div>
+      <p class="say" id="score2">성공 0 / 5</p>
+      <div class="row" style="justify-content:center"><button id="game2Reset" class="btn ghost">처음부터</button></div>
+    </section>
+  </div>
+
+  <!-- ③ 손 따라오기 시험 -->
+  <div class="page hidden" data-page="3">
+    <section class="card">
+      <h2>🏅 손짓만으로 목표선까지 데려와요 — 코스를 골라요</h2>
+      <div class="courses" id="courses"></div>
+      <ol class="lead" style="font-size:1rem;line-height:1.6;color:var(--ink);margin:0">
+        <li>손을 떼고 <b>영점 잡기</b>를 눌러요(1초).</li>
+        <li>▶ 따라오기 시작 → 손을 앞 센서 앞에서 천천히 움직여요.</li>
+        <li>알티노와 코스를 건드리면 안 돼요. 기록원이 ⭕·❌를 눌러요.</li>
+      </ol>
+      <div class="row" style="justify-content:space-between">
+        <button id="tuneOpen" class="btn ghost">⚙ 거리 조절</button>
+        <span class="lead" id="baseMsg">영점 전</span>
+      </div>
+    </section>
+    <section class="card center">
+      <h2>🤚 따라오기</h2>
+      <div class="status"><span class="arrow" id="arrow">⏸</span><span id="handMsg">손을 기다려요</span></div>
+      <div class="row" style="justify-content:center">
+        <button id="zero" class="btn sun">① 영점 잡기</button>
+        <button id="follow" class="btn mint big">▶ 따라오기 시작</button>
+        <button id="stopF" class="btn coral big hidden">■ 멈춰</button>
+      </div>
+      <div id="judgeBox" class="hidden">
+        <p class="say">기록원: 목표선까지 왔나요?</p>
+        <div class="judge"><button id="judgeOk" class="btn mint">⭕ 성공</button><button id="judgeNo" class="btn coral">❌ 실패</button></div>
+      </div>
+      <div id="resultBox" class="result hidden"></div>
+      <div aria-hidden="true"></div><!-- 가운데 정렬용: 마지막 칸이 숨어도 위아래 여백이 같게 -->
+    </section>
+  </div>
+
+  <!-- ④ 더 해 보기 -->
+  <div class="page hidden" data-page="4">
+    <section class="card">
+      <h2>↔ 심화 — 밀고 당기기</h2>
+      <p class="lead">너무 가까우면 뒤로, 알맞으면 멈추고, 멀면 다가와요. (영점은 ③에서)</p>
+      <div class="zones" id="zones"><span data-z="back">◀ 뒤로</span><span data-z="stay">■ 멈춤</span><span data-z="come">▶ 다가옴</span></div>
+      <p class="say" id="pushMsg">–</p>
+      <div class="row" style="justify-content:center">
+        <button id="push" class="btn mint big">▶ 시작</button>
+        <button id="stopP" class="btn coral big hidden">■ 멈춰</button>
+      </div>
+    </section>
+    <section class="card center">
+      <h2>🤫 선택 — 알티노 몰래 다가가기</h2>
+      <p class="lead" style="text-align:center">알티노는 가만히 있어요. 친구들이 앞·옆·뒤에서 몰래 손을 가까이!</p>
+      <p class="bignum" id="sneakArrow">👀</p>
+      <p class="say" id="sneakMsg">준비를 누르면 시작해요.</p>
+      <div class="row" style="justify-content:center"><button id="sneak" class="btn mint big">▶ 준비</button></div>
+      <p class="say" id="sneakScore">알아챈 횟수 0</p>
+    </section>
+  </div>
+</div>
+
+<!-- ✎ 거리 조절 창 (선생님) -->
+<div id="tune" class="modal hidden">
+  <div class="sheet">
+    <h2 style="margin:0">⚙ 거리 조절</h2>
+    <p class="lead">교실·로봇마다 달라요. 실제로 해 보며 맞춰요.</p>
+    <div class="set">
+      <span>너무 가까움(멈춤) 기준 — 숫자보다 작으면</span><span class="stp"><button data-t="near" data-d="-10">−</button><b id="vNear"></b><button data-t="near" data-d="10">+</button></span>
+      <span>손 알아채기 — 영점보다 몇 % 줄면</span><span class="stp"><button data-t="detect" data-d="-5">−</button><b id="vDetect"></b><button data-t="detect" data-d="5">+</button></span>
+      <span>센서 찾기·몰래 다가가기 — 숫자보다 작으면</span><span class="stp"><button data-t="found" data-d="-50">−</button><b id="vFound"></b><button data-t="found" data-d="50">+</button></span>
+    </div>
+    <div class="row" style="justify-content:center"><button id="tuneDefault" class="btn ghost">처음 값으로</button><button id="tuneClose" class="btn">닫기</button></div>
+  </div>
+</div>
+
+<!-- ★ 스크립트 순서 고정 -->
+<script src="js/protocol.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/dotmatrix.js"></script>
+<script src="js/transport.js"></script>
+<script src="js/kit.js"></script>
+<script src="js/t06.js"></script>
+</body>
+</html>
