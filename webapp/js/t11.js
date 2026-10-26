@@ -1,8 +1,10 @@
 // t11 순서대로 길 안내하기 (21–22차시) — 기획서 docs/topics/t11.md
 // ① 사람 로봇 놀이(명령 카드를 놓고 한 장씩 읽기 — 로봇은 안 움직임) → ② 블록으로 길 안내하기(한 칸 맞추기,
 // 블록 실행, 되풀이 규칙 찾기) → ③ 버그 고치기 미션(틀린 순서를 실행해 보고 고치기, 미션 3개)
-// ❗ 회전 센서·자이로가 없어 '한 칸'·'돌기'는 시간으로만 만든다(03 §10). 로봇별 보정은 이 앱의 저장값(cal)에 —
+// ❗ 회전 센서·자이로가 없어 '한 칸'은 시간으로만 만든다(03 §10). 로봇별 보정은 이 앱의 저장값(cellMs)에 —
 //    t14 와 공용(kit)으로 할지는 열린 결정(10 §7-4).
+// ❗ 돌기(↰ ↱)는 알티노가 격자 칸 안에서 제자리로 못 돌아서(조향 차) 사람이 손으로 돌린다 — 실행 중 돌기 블록이
+//    오면 멈추고 '알티노를 왼쪽/오른쪽으로 돌려주세요' 창, '돌렸어요'를 누르면 다음 블록(2026-10-26, 저자 요청).
 'use strict';
 (function () {
   const $ = (id) => document.getElementById(id);
@@ -15,7 +17,6 @@
   });
 
   const SPEED = 300;            // 03 §1 순항
-  const STEER = 127;            // 03 §1 ±127 제자리급 회전
   const GAP_MS = 300;           // 블록 사이 쉼 — 아이들이 눈으로 따라갈 수 있게
   const MAX_BLOCKS = 12;
   const SYM = { F: '↑', L: '←', R: '→' };
@@ -187,7 +188,7 @@
   }
 
   // ── ②③ 블록 실행 ───────────────────────────────────────────────
-  let cellMs = kit.store.num('cellMs', 1000, 300, 3000), turnMs = kit.store.num('turnMs', 700, 200, 2000);
+  let cellMs = kit.store.num('cellMs', 1000, 300, 3000);
   let seq2 = clean(kit.store.get('seq2', []));
   let mis = kit.store.get('mis', null); if (!Array.isArray(mis) || mis.length !== 3) mis = MISSIONS.map(m => ({ seq: m.bug.split(''), solved: false }));
   mis.forEach((m, i) => { m.seq = clean(m.seq); if (!m.seq.length && !m.solved) m.seq = MISSIONS[i].bug.split(''); });
@@ -201,21 +202,50 @@
     simAt = -1; ed2.setNow(-1); judging = false; $('fb2').textContent = '';
   }, render2);
 
-  // 블록 하나를 알티노로 — 앞으로: 속도 300 × 한 칸 시간 / 돌기: 앞으로 꺾기 + 뒤로 반대로 꺾기(제자리 가까이)
+  // 블록 하나를 알티노로 — 앞으로: 속도 300 × 한 칸 시간 / 돌기: 멈추고 사람이 손으로 돌린다
   async function doBlock(r, b) {
-    const phases = b === 'F' ? [[SPEED, 0, cellMs]]
-      : [[SPEED, (b === 'R' ? 1 : -1) * STEER, turnMs], [-SPEED, (b === 'R' ? -1 : 1) * STEER, turnMs]];
-    for (const [sp, st, ms] of phases) {
-      const t0 = performance.now();
-      while (performance.now() - t0 < ms) {
-        r.drive(sp, st);
-        if (!await r.sleep(50)) return false;
-      }
-      r.drive(0, 0);
-      if (!await r.sleep(150)) return false;
+    if (b !== 'F') return askTurn(r, b);
+    const t0 = performance.now();
+    while (performance.now() - t0 < cellMs) {
+      r.drive(SPEED, 0);
+      if (!await r.sleep(50)) return false;
     }
-    return true;
+    r.drive(0, 0);
+    return r.sleep(150);
   }
+
+  // ── 돌기 = 손으로 ───────────────────────────────────────────────
+  // 도움 그림: 격자 한 칸, 알티노(위에서 본 모습)와 돌릴 방향 화살표, 돌린 뒤 모습(흐리게)
+  function turnSvg(b) {
+    const car = (op) => `<g opacity="${op}"><rect x="74" y="66" width="52" height="76" rx="14" fill="#ffd35c" stroke="#5a3200" stroke-width="3"/>`
+      + `<rect x="84" y="74" width="32" height="18" rx="5" fill="#8fd3ff" stroke="#5a3200" stroke-width="2"/>`
+      + `<circle cx="84" cy="66" r="4" fill="#fff" stroke="#5a3200" stroke-width="2"/><circle cx="116" cy="66" r="4" fill="#fff" stroke="#5a3200" stroke-width="2"/></g>`;
+    const body = `<rect x="16" y="16" width="168" height="168" rx="12" fill="#fffdf8" stroke="#e0d2bc" stroke-width="4" stroke-dasharray="10 8"/>`
+      + `<g transform="rotate(-90 100 104)">${car(0.22)}</g>${car(1)}`
+      + `<path d="M150 64 A62 62 0 0 0 54 58" fill="none" stroke="#ff7a86" stroke-width="9" stroke-linecap="round"/>`
+      + `<path d="M40 50 L66 48 L52 72 Z" fill="#ff7a86"/>`;
+    const hand = `<text x="${b === 'R' ? 42 : 158}" y="170" font-size="34" text-anchor="middle">🤚</text>`;
+    return `<svg viewBox="0 0 200 200" width="200" height="200" aria-hidden="true">`
+      + (b === 'R' ? `<g transform="translate(200 0) scale(-1 1)">${body}</g>` : body) + hand + `</svg>`;
+  }
+  let turned = false;
+  kit.block($('turnPop'));                // 창이 떠 있는 동안 바퀴는 못 움직인다(S2)
+  function showTurn(b) {
+    $('turnPic').innerHTML = turnSvg(b);
+    $('turnMsg').textContent = b === 'L' ? '알티노를 왼쪽으로 돌려주세요.' : '알티노를 오른쪽으로 돌려주세요.';
+    $('turnPop').classList.remove('hidden');
+  }
+  const hideTurn = () => $('turnPop').classList.add('hidden');
+  async function askTurn(r, b) {
+    r.drive(0, 0);
+    turned = false; showTurn(b); kit.signal('notice');
+    while (!turned) { if (!await r.sleep(100)) { hideTurn(); return false; } }
+    hideTurn();
+    $('fb2').textContent = '손을 떼요…';
+    return r.sleep(800);                 // 손을 로봇에서 뗄 시간 (05 §7)
+  }
+  $('turnDone').onclick = () => { turned = true; };
+  $('turnStop').onclick = () => { hideTurn(); kit.stop(); };
 
   function execute(onRobot) {
     const seq = curSeq().slice();
@@ -225,7 +255,7 @@
       running = true; runSeq = seq; judging = false; ed2.lock(true); simAt = 0; ed2.setNow(-1); render2();
       if (onRobot) { kit.signal('start'); $('fb2').textContent = '준비…'; $('fb2').className = 'fb'; if (!await r.sleep(1000)) return; }
       for (let i = 0; i < seq.length; i++) {
-        ed2.setNow(i); $('fb2').textContent = `${i + 1}번째 블록: ${NAME[seq[i]]}`; render2();
+        ed2.setNow(i); $('fb2').textContent = `${i + 1}번째 블록: ${NAME[seq[i]]}` + (onRobot && seq[i] !== 'F' ? ' — 손으로 돌려요' : ''); render2();
         if (onRobot) { if (!await doBlock(r, seq[i])) return; }
         else if (!await r.sleep(600)) return;
         simAt = i + 1; render2();
@@ -260,6 +290,7 @@
   }
   function say(t, good) { $('fb2').textContent = t; $('fb2').className = 'fb ' + (good ? 'ok' : 'no'); }
   function endRun() {
+    hideTurn();
     if (running) { running = false; ed2.lock(false); ed2.setNow(-1); simAt = -1; say('멈췄어요. 다시 실행할 수 있어요.', false); }
     render2();
   }
@@ -309,22 +340,15 @@
   $('calOpen').onclick = () => { if (running) return; showCal(true); };
   $('calClose').onclick = () => showCal(false);
   $('calStop').onclick = () => kit.stop();
-  const setCal = (k, v) => {
-    if (k === 'cell') { cellMs = Math.max(300, Math.min(3000, v)); kit.store.set('cellMs', cellMs); }
-    else { turnMs = Math.max(200, Math.min(2000, v)); kit.store.set('turnMs', turnMs); }
-    renderCal();
-  };
-  $('cellMinus').onclick = () => setCal('cell', cellMs - 100);
-  $('cellPlus').onclick = () => setCal('cell', cellMs + 100);
-  $('turnMinus').onclick = () => setCal('turn', turnMs - 50);
-  $('turnPlus').onclick = () => setCal('turn', turnMs + 50);
+  const setCal = (v) => { cellMs = Math.max(300, Math.min(3000, v)); kit.store.set('cellMs', cellMs); renderCal(); };
+  $('cellMinus').onclick = () => setCal(cellMs - 100);
+  $('cellPlus').onclick = () => setCal(cellMs + 100);
   const tryBlock = (b) => {
     const ok = kit.run(async (r) => { kit.signal('start'); if (!await r.sleep(800)) return; if (!await doBlock(r, b)) return; r.drive(0, 0); });
     if (!ok) kit.toast('이미 움직이는 중이에요');
   };
   $('cellTry').onclick = () => tryBlock('F');
-  $('turnTry').onclick = () => tryBlock('R');
-  function renderCal() { $('cellVal').textContent = (cellMs / 1000).toFixed(1) + '초'; $('turnVal').textContent = (turnMs / 1000).toFixed(2) + '초'; }
+  function renderCal() { $('cellVal').textContent = (cellMs / 1000).toFixed(1) + '초'; }
 
   // ── 별·성장기록부 — 코스 완주 ⭐ · 되풀이 규칙 찾기 ⭐⭐ · 미션 3개 해결 ⭐⭐⭐ ──
   function checkStars() {

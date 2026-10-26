@@ -1,6 +1,7 @@
 // t10 스스로 멈추는 차의 비밀 (19–20차시) — 기획서 docs/topics/t10.md
 // ① 사람 센서 놀이(눈·머리·발 역할 + 알티노의 입력→판단→출력 보기) → ② 센서 숫자 관찰(작을수록 가깝다)
-// → ③ 긴급 제동 실험(속도 300·400·500, 앞 센서 220 에서 스스로 정지, 사람이 cm·mm 로 잰 거리 기록)
+// → ③ 긴급 제동 실험(속도 250·300·350, 앞 센서 220 에서 스스로 정지, 사람이 cm·mm 로 잰 거리 기록)
+//   속도는 저자 요청으로 300·400·500 → 250·300·350 (2026-10-26). 250 의 제자리 출발은 kit 의 킥(S4)이 돕는다
 'use strict';
 (function () {
   const $ = (id) => document.getElementById(id);
@@ -14,8 +15,9 @@
   });
 
   const FRONT = 220;              // 정면 벽 감지 ir2 — 2026-09-20 파일럿 현장 보정값(03 §2)
-  const SPEEDS = [300, 400, 500];
-  const MAX_RUN_MS = 8000;        // 이만큼 달려도 벽이 없으면 멈춘다(벽을 안 세웠거나 비스듬할 때)
+  const SPEEDS = [250, 300, 350];
+  const MAX_RUN_MS = 8000;        // 속도 300 으로 이만큼 달려도 벽이 없으면 멈춘다(벽을 안 세웠거나 비스듬할 때)
+  const maxRunMs = (s) => Math.round(MAX_RUN_MS * 300 / s);   // 느리면 같은 거리를 가는 데 더 오래 — 250 은 9.6초
   const DISTS = ['5cm', '10cm', '20cm', '아무것도 없음'];
   const r10 = (v) => Math.round(v / 10) * 10;
 
@@ -100,7 +102,8 @@
   // ── ③ 긴급 제동 실험 ────────────────────────────────────────────
   // brake = { '300': [mm, mm], … }  — 길이는 mm 로 저장하고 cm·mm 로 보여 준다
   let brake = kit.store.get('brake', {}); if (!brake || typeof brake !== 'object') brake = {};
-  let speed = kit.store.num('speed', 300, 300, 500); if (!SPEEDS.includes(speed)) speed = 300;
+  Object.keys(brake).forEach(k => { if (!SPEEDS.includes(+k)) delete brake[k]; });   // 예전 속도(400·500) 기록은 버림
+  let speed = kit.store.num('speed', 250, 250, 350); if (!SPEEDS.includes(speed)) speed = 250;
   let runPhase = 'idle';            // idle | running | measure
   const tries = (s) => Array.isArray(brake[s]) ? brake[s].filter(x => Number.isFinite(x)) : [];
   const cmmm = (mm) => `${Math.floor(mm / 10)}cm ${mm % 10}mm`;
@@ -123,7 +126,7 @@
       while (r.alive()) {
         const v = r.sensor.ir2;                       // 작을수록 가깝다!
         if (v != null && v < FRONT) break;            // 입력(센서) → 판단(220보다 작다) → 출력(정지)
-        if (performance.now() - t0 > MAX_RUN_MS) {
+        if (performance.now() - t0 > maxRunMs(speed)) {
           r.drive(0, 0); runPhase = 'idle';
           $('runMsg').textContent = '벽을 못 찾았어요'; $('runFb').textContent = '벽이 알티노 바로 앞에 있는지 확인하고 다시 출발해요.'; $('runFb').className = 'fb no';
           kit.signal('fail');
@@ -160,7 +163,7 @@
   };
   $('brakeReset').onclick = async () => {
     if (!await kit.confirm({ title: '긴급 제동 기록을 처음부터 할까요?', lines: ['속도마다 잰 거리가 지워져요'], okText: '네, 처음부터', danger: true })) return;
-    brake = {}; kit.store.remove('brake'); speed = 300; runPhase = 'idle'; $('runMsg').textContent = ''; $('runFb').textContent = ''; renderBrake();
+    brake = {}; kit.store.remove('brake'); speed = 250; runPhase = 'idle'; $('runMsg').textContent = ''; $('runFb').textContent = ''; renderBrake();
   };
   function renderBrake() {
     document.querySelectorAll('#speedChips button').forEach(b => { const s = +b.dataset.s; b.classList.toggle('on', s === speed); b.textContent = '속도 ' + s + (tries(s).length >= 2 ? ' ✓' : ''); });
@@ -181,7 +184,7 @@
     $('brakeTable').innerHTML = h;
     let say = '세 속도를 모두 재면 비교해 줘요.';
     if (ranked.length === 3) {
-      const faster = avg(500) < avg(400) && avg(400) < avg(300);
+      const faster = avg(350) < avg(300) && avg(300) < avg(250);
       say = faster ? '빠를수록 벽 가까이에서 멈췄어요! 왜 그럴까요? (멈출 때까지 미끄러지는 거리)'
         : '속도와 멈춘 거리의 규칙이 잘 안 보여요. 같은 속도로 한 번 더 재 볼까요?';
     }
@@ -199,7 +202,7 @@
     const near = all1 ? SPEEDS.slice().sort((a, b) => tries(a)[0] - tries(b)[0])[0] : null;
     kit.record.add({
       title: stars >= 2 ? '긴급 제동 실험을 했어요' : '센서 숫자를 관찰했어요',
-      detail: stars >= 2 ? `속도 300·400·500 멈춘 거리 비교 · 벽에 가장 가까이 멈춘 속도 ${near}` : '거리 5·10·20cm 에서 앞 센서 숫자 기록',
+      detail: stars >= 2 ? `속도 ${SPEEDS.join('·')} 멈춘 거리 비교 · 벽에 가장 가까이 멈춘 속도 ${near}` : '거리 5·10·20cm 에서 앞 센서 숫자 기록',
       stars,
     });
     kit.toast(['', '🏅 도전 배지!', '🏅 실력 배지!', '🏅 박사 배지!'][stars]);
