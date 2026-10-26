@@ -47,6 +47,26 @@ await p.click('#recOpen'); await p.mouse.click(20, 780); await p.waitForTimeout(
 ok('바깥을 눌러도 닫힘', !(await p.isVisible('#recPop')));
 await p.evaluate(() => localStorage.setItem('altino.record', '망가짐')); await p.click('#recOpen'); await p.waitForTimeout(100);
 ok('망가진 기록이어도 열림(기록 0)', (await p.textContent('#recSum')).includes('0 / 15'));
+ok('브라우저에서는 🔄 업데이트 확인 버튼이 숨음', !(await p.isVisible('#updBtn')));
 ok('무에러', errs.length === 0, errs.join(' | '));
+
+// 태블릿(APK) — 가짜 AltinoUpdate 로 업데이트 확인 흐름
+const ctx2 = await br.newContext({ viewport: { width: 1280, height: 800 } });
+await ctx2.addInitScript(() => {
+  window.__dl = null;
+  window.AltinoUpdate = {
+    info: () => JSON.stringify({ name: '1.0.1028', code: 1028, canInstall: true }),
+    check: () => setTimeout(() => window.__altinoOnUpdate(JSON.stringify({ ok: true, newer: true, name: '1.0.1030', size: 8400000, url: 'https://x/a.apk', notes: '<b>새 기능</b>' })), 50),
+    download: (u) => { window.__dl = u; },
+  };
+});
+const q = await ctx2.newPage(); const errs2 = []; q.on('pageerror', e => errs2.push(e.message));
+await q.goto(BASE + '/school.html'); await q.waitForTimeout(400);
+ok('태블릿에서는 🔄 업데이트 확인 버튼과 설치된 버전이 보임', await q.isVisible('#updBtn') && (await q.textContent('#appVer')).includes('1.0.1028'), await q.textContent('#appVer'));
+await q.click('#updBtn'); await q.waitForTimeout(300);
+ok('누르면 새 버전 안내(메모는 글자 그대로)', (await q.textContent('#updOv')).includes('1.0.1030') && (await q.textContent('#updOv')).includes('<b>새 기능</b>'));
+await q.click('#uYes'); await q.waitForTimeout(100);
+ok('지금 업데이트 → 내려받기 시작', (await q.evaluate(() => window.__dl)) === 'https://x/a.apk');
+ok('무에러(태블릿)', errs2.length === 0, errs2.join(' | '));
 console.log('──────────────'); console.log(`로봇학교 화면 시험: ${pass} 통과 / ${fail} 실패`);
 await br.close(); server.close(); process.exit(fail ? 1 : 0);
