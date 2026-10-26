@@ -17,6 +17,9 @@
     height:100vh;overflow:hidden;user-select:none;padding:10px 16px;display:flex;flex-direction:column;gap:8px}
   h1,h2,b{font-weight:700}
   .hidden{display:none !important}
+  .pop{position:fixed;inset:0;background:rgba(20,20,30,.5);display:flex;align-items:center;justify-content:center;z-index:80}
+  .popbox{background:#fff;border-radius:24px;padding:22px 28px;text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center;box-shadow:0 12px 40px rgba(120,90,50,.25);max-width:92vw}
+  .popbox h2{margin:0;font-size:1.6rem}
   .topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
   .topbar a{color:var(--blue);text-decoration:none;font-size:1.05rem}
   .btn{border:0;border-radius:16px;font-family:inherit;font-size:1.05rem;padding:12px 18px;cursor:pointer;background:var(--blue);color:#fff;box-shadow:var(--shadow)}
@@ -145,13 +148,12 @@
         <table id="tab3" class="hidden"></table>
       </div>
       <div id="calView" class="hidden" style="display:flex;flex-direction:column;gap:10px;flex:1">
-        <h2>📏 한 칸 맞추기 — 내 알티노의 한 칸과 돌기</h2>
+        <h2>📏 한 칸 맞추기 — 내 알티노의 한 칸</h2>
         <p class="lead">알티노는 바퀴가 몇 바퀴 돌았는지 모르고 <b>시간</b>으로 움직여요. 그래서 로봇마다 한 칸이 조금씩 달라요.</p>
         <p class="say">↑ 한 칸 시간</p>
         <div class="stepper"><button id="cellMinus">−</button><b id="cellVal">1.0초</b><button id="cellPlus">+</button><button id="cellTry" class="btn">↑ 한 칸 해 보기</button></div>
-        <p class="say">← → 돌기 시간 <span class="lead">(앞으로 꺾고 뒤로 꺾어 제자리 가까이 돌아요)</span></p>
-        <div class="stepper"><button id="turnMinus">−</button><b id="turnVal">0.70초</b><button id="turnPlus">+</button><button id="turnTry" class="btn">→ 돌기 해 보기</button></div>
-        <p class="lead">한 칸보다 덜 가면 + , 더 가면 − . 돌기가 덜 돌면 + , 더 돌면 − . 이 태블릿에 저장돼요.</p>
+        <p class="lead">한 칸보다 덜 가면 + , 더 가면 − . 이 태블릿에 저장돼요.</p>
+        <p class="lead">↰ ↱ 돌기는 알티노가 격자 칸 안에서 제자리로 돌지 못해서 <b>손으로 돌려 줘요</b>. 실행 중에 돌기 블록이 오면 알려 줘요.</p>
         <div class="row" style="justify-content:center;margin-top:auto"><button id="calStop" class="btn coral">■ 멈춰</button><button id="calClose" class="btn">지도 보기 →</button></div>
       </div>
     </section>
@@ -164,6 +166,15 @@
 <script src="js/dotmatrix.js"></script>
 <script src="js/transport.js"></script>
 <script src="js/kit.js"></script>
+<!-- 돌기 블록 — 알티노를 손으로 돌려 달라는 창(실행 중 이 창이 떠 있으면 kit 이 움직임을 막는다) -->
+<div id="turnPop" class="pop hidden">
+  <div class="popbox">
+    <div id="turnPic"></div>
+    <h2 id="turnMsg">알티노를 왼쪽으로 돌려주세요.</h2>
+    <p class="lead">지금 칸에서 그대로, 손으로 한 번(90°) 돌려요.</p>
+    <div class="row" style="justify-content:center"><button id="turnDone" class="btn mint big">✅ 돌렸어요</button><button id="turnStop" class="btn coral">■ 멈춰</button></div>
+  </div>
+</div>
 <script src="js/t11.js"></script>
 </body>
 </html>

@@ -24,12 +24,36 @@
   .app.off{opacity:.45;pointer-events:none}
   .app.off span::after{content:' · 준비 중'}
   #team{color:var(--mut)}
+  .toplinks{display:flex;gap:14px;align-items:center}
+  .recbtn{border:2px solid var(--line);background:#fff;border-radius:14px;padding:8px 14px;font-family:inherit;font-size:1rem;color:var(--ink);cursor:pointer}
+  /* 📒 성장기록부 — 이 태블릿에 쌓인 기록(altino.record)을 차시 순으로 */
+  #recPop{position:fixed;inset:0;background:rgba(20,20,30,.5);display:flex;align-items:center;justify-content:center;z-index:50}
+  #recPop.hidden{display:none}
+  .recbox{background:#fff;border-radius:22px;width:min(920px,94vw);max-height:90vh;display:flex;flex-direction:column;padding:18px 22px;gap:10px;box-shadow:0 12px 40px rgba(120,90,50,.25)}
+  .recbox h2{margin:0;font-size:1.3rem}
+  .rechead{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .reclist{overflow:auto;display:flex;flex-direction:column;gap:8px;padding-right:4px}
+  .recapp{border:2px solid var(--line);border-radius:14px;padding:10px 12px;background:#fffdf8}
+  .recapp.none{opacity:.45}
+  .recapp h3{margin:0 0 4px;font-size:1rem}
+  .recapp h3 small{color:var(--mut);font-weight:500}
+  .recrow{display:flex;gap:10px;align-items:baseline;font-size:.95rem;padding:2px 0}
+  .recrow .st{min-width:4.2em;color:#e0a000}
+  .recrow .dt{color:var(--mut);font-size:.8rem;margin-left:auto;white-space:nowrap}
+  .recrow .de{color:var(--mut);font-size:.85rem}
 </style>
 </head>
 <body>
   <div class="top">
     <h1>🏫 알티노 로봇 학교 <span id="team" style="font-size:1rem"></span></h1>
-    <a href="home.html">체험관 홈 →</a>
+    <div class="toplinks"><button id="recOpen" class="recbtn">📒 성장기록부 보기</button><a href="home.html">체험관 홈 →</a></div>
+  </div>
+  <div id="recPop" class="hidden">
+    <div class="recbox">
+      <div class="rechead"><h2>📒 성장기록부 <small id="recSum" style="color:var(--mut);font-weight:500;font-size:.9rem"></small></h2><button id="recClose" class="recbtn">닫기</button></div>
+      <p style="margin:0;color:var(--mut);font-size:.85rem">이 태블릿에서 해낸 일이에요. 같은 앱에서는 별이 늘 때만 한 줄 더 남아요.</p>
+      <div class="reclist" id="recList"></div>
+    </div>
   </div>
   <div class="bands" id="bands"></div>
   <script src="js/apps.js"></script>
@@ -51,6 +75,30 @@
         root.appendChild(col);
       });
       try { var t = localStorage.getItem('altino.team.name'); if (t) document.getElementById('team').textContent = '· 👥 ' + t; } catch (e) {}
+
+      // 📒 성장기록부 보기 — kit.record 가 쓰는 'altino.record' 를 읽기만 한다
+      var esc = function (x) { return String(x == null ? '' : x).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+      function records() { try { var a = JSON.parse(localStorage.getItem('altino.record') || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+      function day(ms) { var d = new Date(ms); return isNaN(d) ? '' : (d.getMonth() + 1) + '/' + d.getDate(); }
+      function renderRec() {
+        var recs = records(), apps = window.ALTINO_APPS || [], html = '', has = 0, stars = 0;
+        apps.forEach(function (a) {
+          var mine = recs.filter(function (r) { return r && r.app === a.id; });
+          if (mine.length) has++;
+          html += '<div class="recapp' + (mine.length ? '' : ' none') + '" data-app="' + a.id + '"><h3>' + esc(a.title) + ' <small>' + a.id + ' · ' + a.lessons + '차시</small></h3>';
+          if (!mine.length) html += '<div class="recrow"><span class="de">아직 기록 없음</span></div>';
+          mine.forEach(function (r) {
+            var s = Math.max(0, Math.min(3, r.stars | 0)); stars += s;
+            html += '<div class="recrow"><span class="st">' + ('⭐'.repeat(s) || '·') + '</span><b>' + esc(r.title) + '</b><span class="de">' + esc(r.detail) + '</span><span class="dt">' + day(r.at) + '</span></div>';
+          });
+          html += '</div>';
+        });
+        document.getElementById('recList').innerHTML = html;
+        document.getElementById('recSum').textContent = '— 기록한 앱 ' + has + ' / ' + apps.length + ' · 별 ' + stars + '개';
+      }
+      document.getElementById('recOpen').onclick = function () { renderRec(); document.getElementById('recPop').classList.remove('hidden'); };
+      document.getElementById('recClose').onclick = function () { document.getElementById('recPop').classList.add('hidden'); };
+      document.getElementById('recPop').onclick = function (e) { if (e.target.id === 'recPop') this.classList.add('hidden'); };
     })();
   </script>
 </body>

@@ -58,7 +58,7 @@ att = await store('altino.t11.att1');
 ok('다른 곳에 가면 X', att.length === 2 && !att[1].ok, JSON.stringify(att));
 
 // ── ② 블록으로 길 안내하기 ───────────────────────────────────────
-await p.evaluate(() => { localStorage.setItem('altino.t11.cellMs', '300'); localStorage.setItem('altino.t11.turnMs', '200'); });
+await p.evaluate(() => { localStorage.setItem('altino.t11.cellMs', '300'); });
 await p.reload(); await p.waitForTimeout(500);
 await p.click('[data-step="2"]');
 ok('블록이 없으면 실행 못 함', await p.isDisabled('#run2'));
@@ -77,12 +77,25 @@ await act('2', 'clear'); await p.click('#acYes'); await p.waitForTimeout(150);
 await add('2', 'F'); await add('2', 'R');
 await clearTx(); await p.click('#run2'); await p.waitForTimeout(700);
 ok('"준비…" 동안은 움직이지 않음', (await p.evaluate(() => window.__tx.slice())).every(v => v === 0));
-await p.waitForTimeout(2500);
-const tx = await p.evaluate(() => window.__tx.slice()), st = await steers();
+await p.waitForSelector('#turnPop:not(.hidden)', { timeout: 4000 });
+let tx = await p.evaluate(() => window.__tx.slice()), st = await steers();
 ok('↑ 는 조향 0 으로 전진', tx.some((v, i) => v > 0 && st[i] === 0));
-ok('→ 돌기 = 오른쪽으로 꺾어 전진 + 왼쪽으로 꺾어 후진', tx.some((v, i) => v > 0 && st[i] === 127) && tx.some((v, i) => v < 0 && st[i] === -127), JSON.stringify(st.filter(x => x)));
+ok('→ 돌기 블록 → 멈추고 "오른쪽으로 돌려주세요" 창(도움 그림)', (await p.textContent('#turnMsg')).includes('오른쪽으로 돌려주세요') && await p.isVisible('#turnPic svg'), await p.textContent('#turnMsg'));
+await p.evaluate(() => { window.__tx.length = 0; }); await p.waitForTimeout(1200);
+ok('창이 떠 있는 동안은 기다리며 움직이지 않음', await p.isVisible('#turnPop') && (await p.evaluate(() => window.__tx.slice())).every(v => v === 0));
+await p.click('#turnDone'); await p.waitForTimeout(1500);
+st = await steers();
+ok('돌렸어요 → 창이 닫히고 다음으로, 조향은 한 번도 안 씀', !(await p.isVisible('#turnPop')) && st.every(x => x === 0), JSON.stringify(st.filter(x => x)));
 ok('블록이 끝나면 정지', (await tail(3)).every(v => v === 0));
 ok('도착점이 아니면 못 갔다고 알려 줌', (await p.textContent('#fb2')).includes('못 갔어요'));
+// 돌기 창에서 ■ 멈춰
+await act('2', 'clear'); await p.click('#acYes'); await p.waitForTimeout(150);
+await add('2', 'L'); await add('2', 'F');
+await clearTx(); await p.click('#run2');
+await p.waitForSelector('#turnPop:not(.hidden)', { timeout: 3000 });
+ok('↰ 돌기 블록 → "왼쪽으로 돌려주세요" 창', (await p.textContent('#turnMsg')).includes('왼쪽으로 돌려주세요'));
+await p.click('#turnStop'); await p.waitForTimeout(1500);
+ok('창의 ■ 멈춰 → 창 닫히고 실행 끝, 다음 블록 안 감', !(await p.isVisible('#turnPop')) && (await p.textContent('#fb2')).includes('멈췄어요') && (await tail(10)).every(v => v === 0), await p.textContent('#fb2'));
 // 멈춤
 await act('2', 'clear'); await p.click('#acYes'); await p.waitForTimeout(150);
 for (let i = 0; i < 3; i++) await add('2', 'F');
@@ -102,14 +115,16 @@ ok('실행 중 다른 단계로 가면 정지', (await tail(2)).every(v => v ===
 await p.click('[data-step="2"]');
 await act('2', 'clear'); await p.click('#acYes'); await p.waitForTimeout(150);
 for (const b of 'FFRFF') await add('2', b);
-await p.click('#run2'); await p.waitForTimeout(6000);
+await p.click('#run2');
+await p.waitForSelector('#turnPop:not(.hidden)', { timeout: 6000 }); await p.click('#turnDone');
+await p.waitForSelector('#judge2', { state: 'visible', timeout: 6000 });
 ok('알티노로 완주하면 진짜 도착했는지 묻는 버튼', await p.isVisible('#judge2'));
 await p.click('#judgeNo');
 ok('❌ 면 순서가 아니라 한 칸 맞추기를 권함', (await p.textContent('#fb2')).includes('한 칸 맞추기'));
 // 한 칸 맞추기
 await p.click('#calOpen');
-await p.click('#cellPlus'); await p.click('#cellPlus'); await p.click('#turnMinus');
-ok('한 칸·돌기 시간이 저장됨', (await store('altino.t11.cellMs')) === 500 && (await store('altino.t11.turnMs')) === 200);
+await p.click('#cellPlus'); await p.click('#cellPlus');
+ok('한 칸 시간이 저장됨, 돌기 맞추기는 없음(손으로 돌림)', (await store('altino.t11.cellMs')) === 500 && !(await p.$('#turnTry')));
 await clearTx(); await p.click('#cellTry'); await p.waitForTimeout(1100);
 ok('한 칸 해 보기 → 전진', (await tail(2)).every(v => v > 0), JSON.stringify(await tail(2)));
 await p.click('#calStop'); await p.waitForTimeout(300);

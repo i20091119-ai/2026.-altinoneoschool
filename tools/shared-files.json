@@ -1,5 +1,5 @@
 {
- "made": "2026-10-20",
+ "made": "2026-10-26",
  "files": {
   ".github/workflows/android.yml": "d9e27f9f788b5c35f8d1fe79f7a059a2da574dc05fb14d3194e28d7d365cb7b0",
   ".github/workflows/pages.yml": "a8a1d65738f654623ad4171b1bb2395eeb5dbdb90bb5b5854cba49174f255301",
@@ -65,7 +65,7 @@
   "webapp/js/update.js": "fe431ec579860922849808b0f27fa9e100101bb4fc80cdf704a6f72c672add6e",
   "webapp/mode1.html": "3d2245af8d2441a0ee434534a0b180e9710e85f8998e52e9dc5616e8e914b13e",
   "webapp/park.html": "d2f0122159854b11235cfef0f4b70d99f1b0e53b8e483a5c082267e6e6dc82ec",
-  "webapp/school.html": "dcc11851cbc0f4783369ef733791e6866042390463bcd290ac8fcb888a663dba",
+  "webapp/school.html": "9c8a28e7df0325c7468ec612a710a3cb9b36f0d448836031cf380786857bd2c5",
   "webapp/sounds/caught.wav": "22fb9da1a0b113e6815e6b5dec65b994f27b3136d873cfeb1e2b2ae111ef96db",
   "webapp/sounds/charge.wav": "eee1623df3606cb527cbd1495a7a48d0eae78c8d87f3f00d87332dcefbb766be",
   "webapp/sounds/upgrade.wav": "23624d93837ab09dbbe573b70b9c3c165d24198604b1cd13d4ef728b2097dc82",
