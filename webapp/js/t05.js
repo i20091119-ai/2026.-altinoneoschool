@@ -1,8 +1,8 @@
 // t05 비밀 신호 보내기 (9–10차시) — 기획서 docs/topics/t05.md
 // ① 자동차 불빛의 뜻(등 버튼 · 경적 · SOS) → ② 모둠 신호 만들기(빛·경적 × 짧게·길게, 신호표)
 // → ③ 말 없이 전하기 시험(받는 모둠이 신호표로 해독, 기록원 ⭕/❌) → ④ 더 해 보기(신호 몇 가지? · 선생님용 LED 점검)
-// ⚠ LED 는 '15 = 전조등(네오)'만 실측됐다(03 §6). 라이트는 1바이트, 비트 뜻 실측 전 → LAMPS 의 mask:null 은 화면 그림으로만.
-//   실측하면 LAMPS 의 mask 만 채우면 된다(④ LED 점검 칸으로 잴 수 있다).
+// LED 값은 네오 뜻(kit.LED)으로 쓰고 kit 이 기종(네오·라이트·구형)에 맞게 바꿔 보낸다(2026-11-26, PROTOCOL 부록 C).
+//   근거: 오케스트라2 PC판 코드(라이트·네오), 구형은 캠프 앱 실기. 우리 로봇으로는 아직 — ④ LED 점검 칸으로 확인한다.
 'use strict';
 (function () {
   const $ = (id) => document.getElementById(id);
@@ -18,9 +18,9 @@
   const UNIT = 300;          // 짧게 1 : 길게 3, 블록 사이 1 (모스부호 길이 규칙)
   const LAMPS = [
     { id: 'head',  icon: '🔦', name: '전조등',      mask: LIGHT, blink: false, mean: '앞을 밝혀요 · 나 여기 있어요' },
-    { id: 'left',  icon: '⬅',  name: '왼쪽 깜빡이', mask: null,  blink: true,  mean: '왼쪽으로 가요' },
-    { id: 'right', icon: '➡',  name: '오른쪽 깜빡이', mask: null, blink: true,  mean: '오른쪽으로 가요' },
-    { id: 'brake', icon: '🛑', name: '브레이크등',  mask: null,  blink: false, mean: '멈춰요 · 천천히 가요' },
+    { id: 'left',  icon: '⬅',  name: '왼쪽 깜빡이', mask: kit.LED.LEFT,  blink: true,  mean: '왼쪽으로 가요' },
+    { id: 'right', icon: '➡',  name: '오른쪽 깜빡이', mask: kit.LED.RIGHT, blink: true,  mean: '오른쪽으로 가요' },
+    { id: 'brake', icon: '🛑', name: '브레이크등',  mask: kit.LED.BRAKE, blink: false, mean: '멈춰요 · 천천히 가요' },
   ];
   const MEANS = ['안녕', '고마워', '조심해', '따라와'];
   const EL = {
@@ -238,10 +238,10 @@
   kit.block($('ledModal'));
   [1, 2, 4, 8, 16, 32, 64, 128].forEach(v => {
     const b = document.createElement('button'); b.textContent = v; b.dataset.v = v;
-    b.onclick = () => { mask = mask === v ? 0 : v; kit.led(mask); renderLed(); };   // 한 번에 한 값만 — 어느 등인지 헷갈리지 않게
+    b.onclick = () => { mask = mask === v ? 0 : v; kit.ledRaw(mask); renderLed(); };   // 원값 그대로(기종 바꿈 없이)   // 한 번에 한 값만 — 어느 등인지 헷갈리지 않게
     $('bits').appendChild(b);
   });
-  $('bit15').onclick = () => { mask = 15; kit.led(mask); renderLed(); };
+  $('bit15').onclick = () => { mask = 15; kit.ledRaw(mask); renderLed(); };
   $('bitOff').onclick = () => { mask = 0; kit.led(0); renderLed(); };
   $('ledOpen').onclick = () => { stopAll(); mask = 0; renderLed(); $('ledModal').classList.remove('hidden'); };
   $('ledClose').onclick = () => { mask = 0; kit.led(0); $('ledModal').classList.add('hidden'); };

@@ -2,6 +2,7 @@
 // ⚠ 프레임 위치는 js/protocol.js 와 같아야 한다(틀리면 시험이 엉뚱한 걸 통과시킨다 — 실제로 한 번 그랬다):
 //   수신 54바이트: ir1~ir6 = 5,7,9,11,13,15 (각 2바이트) · 조도 cds = 47 · 배터리 = 49
 //   송신 26바이트: motorA = 6~7 바이트 (음수는 0xFFFF−|v|, 1의 보수 — 아래 참고)
+//   조향 = 5 바이트: 왼쪽(음수)도 1의 보수 ~|v| → 읽을 때 v > 127 ? −(255 − v) : v  (2026-11-26 부터, PROTOCOL 부록 C)
 (function () {
   const cfg = window.__STUB_CFG || { connected: true, address: 'AA:BB:CC:DD:EE:16', name: 'ALTINO-NBF16' };
   window.__tx = [];          // 보낸 프레임의 motorA 값들

@@ -7,7 +7,8 @@ const ok = (n, c, x) => { if (c) { pass++; console.log('✓ ' + n); } else { fai
 const hex = P.toHex;
 
 ok('이름으로 기종 판정', P.modelFromName('ALTINO-LITE-BF16') === 'lite' && P.modelFromName('ALTINO-LBF16') === 'lite'
-  && P.modelFromName('ALTINO-NEO-BF16') === 'neo' && P.modelFromName('ALTINO-NBF16') === 'neo' && P.modelFromName('') === 'neo');
+  && P.modelFromName('ALTINO-NEO-BF16') === 'neo' && P.modelFromName('ALTINO-NBF16') === 'neo' && P.modelFromName('') === 'neo'
+  && P.modelFromName('ALTINO-B7CE') === 'classic' && P.modelFromName('RN4678-1A2B') === 'classic');
 
 const st = new P.AltinoState();
 P.setModel('neo');
@@ -19,8 +20,8 @@ let f = P.buildFrame(st);
 ok('라이트 정지 프레임 22바이트', hex(f) === '02 10 02 01 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 03', hex(f));
 st.go(300, 300); st.steer(-127); st.soundSet(37); st.ledSet(3);
 f = P.buildFrame(st);
-ok('라이트 전진 300·좌회전·소리·LED 위치', f[5] === 0x81 && f[6] === 0x01 && f[7] === 0x2c && f[8] === 0x01 && f[9] === 0x2c
-  && f[19] === 37 && f[20] === 3 && f[21] === 0x03, hex(f));
+ok('라이트 전진 300·좌회전(1의 보수 0x80)·소리·전조등(네오 3 → 라이트 1)', f[5] === 0x80 && f[6] === 0x01 && f[7] === 0x2c && f[8] === 0x01 && f[9] === 0x2c
+  && f[19] === 37 && f[20] === 1 && f[21] === 0x03, hex(f));
 let sum = 0; for (let i = 3; i <= 20; i++) sum += f[i];
 ok('라이트 체크섬 = sum(3..20) & 0xFF', f[2] === (sum & 0xFF));
 st.go(-300, -300);

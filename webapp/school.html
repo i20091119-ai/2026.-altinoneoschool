@@ -51,7 +51,7 @@
 <body>
   <div class="top">
     <h1>🏫 알티노 로봇 학교 <span id="team" style="font-size:1rem"></span></h1>
-    <div class="toplinks"><span id="appVer" style="color:var(--mut);font-size:.85rem"></span><button id="updBtn" type="button" class="recbtn">🔄 업데이트 확인</button><button id="recOpen" class="recbtn">📒 성장기록부 보기</button><a href="home.html">체험관 홈 →</a></div>
+    <div class="toplinks"><span id="appVer" style="color:var(--mut);font-size:.85rem"></span><button id="updBtn" type="button" class="recbtn">🔄 업데이트 확인</button><a id="apkLink" class="recbtn" style="display:none;text-decoration:none;color:var(--ink)" href="https://github.com/i20091119-ai/2026.-altinoneoschool/releases/latest" target="_blank" rel="noopener">📥 앱(APK) 받기</a><button id="recOpen" class="recbtn">📒 성장기록부 보기</button><a href="home.html">체험관 홈 →</a></div>
   </div>
   <div id="recPop" class="hidden">
     <div class="recbox">
@@ -82,6 +82,9 @@
         root.appendChild(col);
       });
       try { var t = localStorage.getItem('altino.team.name'); if (t) document.getElementById('team').textContent = '· 👥 ' + t; } catch (e) {}
+
+      // 📥 앱(APK) 받기 — 웹(브라우저)에서만. 태블릿 앱 안에서는 🔄 업데이트 확인을 쓴다
+      if (!window.AltinoUpdate) document.getElementById('apkLink').style.display = '';
 
       // 📒 성장기록부 보기 — kit.record 가 쓰는 'altino.record' 를 읽기만 한다
       var esc = function (x) { return String(x == null ? '' : x).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };

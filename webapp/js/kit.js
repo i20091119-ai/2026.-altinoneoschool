@@ -22,14 +22,17 @@
 'use strict';
 (function () {
   const P = window.AltinoProtocol, T = window.AltinoTransport;
-  const VERSION = '1.1.0';
+  const VERSION = '1.2.0';
 
   const STREAM_MS = 100;                   // S8 — 올리지 말 것
   const KICK = 400, KICK_MS = 180;         // S4
   const KICK_BELOW = 330;                  //    이보다 느린 출발에만 킥
   const FRESH_MS = 1200;                   // S6
   const RECONN_HINT_MS = 12000;            // 이만큼 재연결이 이어지면 원인을 짚어 준다
-  const BATT_LOW = 700;
+  const BATT_LOW = 700;                    // 네오 원값 기준(03 §7). 라이트·구형은 % 로 보여 주고 20% 미만이 낮음
+  const BATT_LOW_PCT = 20;
+  const STEER_GAIN_CLASSIC = 1.75;         // 구형은 같은 조향값에 덜 꺾인다 — 화면 값은 네오 기준이라 키워 보낸다(캠프 앱 실기)
+  const PROBE_MS = 2500;                   // 기종 찾기: 이만큼 답이 없으면 다음 기종 프레임으로
   const RECORD_MAX = 300;
 
   let created = false;                     // 한 화면에 kit 은 하나만
@@ -237,8 +240,33 @@
       if (o.kick !== false && m !== 0 && lastM === 0 && Math.abs(m) < KICK_BELOW) kickUntil = Date.now() + KICK_MS;
       lastM = m;
       const out = (m !== 0 && Date.now() < kickUntil) ? Math.sign(m) * KICK : m;
+      if (st !== 0 && P.getModel() === 'classic') st = Math.max(-127, Math.min(127, Math.round(st * STEER_GAIN_CLASSIC)));
       state.go(out, out); state.steer(st);
+      probeModel();
       send();
+    }
+
+    // ── 기종 찾기 (캠프 앱 i20091119-ai/altino 에서 가져옴) ──────────────
+    // 이름(또는 적어 둔 값)으로 고른 기종의 프레임에 로봇이 답하지 않으면 나머지 기종을 차례로 보내 본다.
+    // 답이 온 기종은 로봇 주소별로 적어 둔다(altino.model.<주소>, 다음부터 바로 그 기종). 셋 다 답이 없으면 처음 기종으로 돌아와 멈춘다.
+    let rxFrames = 0;
+    const probe = { at: 0, base: 0, stage: 0, order: [] };
+    const robotAddr = () => { try { return transport && transport.state ? (transport.state().address || '') : ''; } catch (e) { return ''; } };
+    function probeStart() {
+      probe.at = Date.now(); probe.base = rxFrames; probe.stage = 0;
+      probe.order = [P.getModel()].concat(P.MODELS.filter(m => m !== P.getModel()));
+    }
+    function probeModel() {
+      const N = probe.order.length;
+      if (!N || probe.stage >= N || !probe.at || !transport || !transport.connected || !T.AndroidBridgeTransport.supported) return;
+      if (rxFrames > probe.base) {                  // 답이 왔다 → 이 기종이 맞다
+        // 처음 고른 기종(이름 규칙·적어 둔 값)이 맞았으면 적을 것이 없다. 다른 기종으로 맞췄을 때만 로봇 주소별로 적는다
+        if (probe.stage > 0) { const a = robotAddr(); if (a) raw.set('altino.model.' + a, P.getModel()); toast('🔧 ' + P.modelLabel() + '로 맞췄어요'); }
+        probe.stage = N; return;
+      }
+      if (Date.now() - probe.at < PROBE_MS) return;
+      probe.stage++; probe.at = Date.now();
+      P.setModel(probe.order[probe.stage % N]); assembler.buf = [];
     }
     function send() { if (transport && transport.connected) { try { transport.send(P.buildFrame(state)); } catch (e) {} } }
     setInterval(tick, STREAM_MS);
@@ -314,7 +342,9 @@
       state.soundSet(code | 0);
       soundTimer = setTimeout(() => state.soundSet(0), ms || 400);   // S7 — 끄는 걸 잊지 않게
     }
+    // 불빛 값은 네오 뜻(AltinoProtocol.LED: HEAD 3 · BACK 12 · RIGHT 0x50 · LEFT 0xA0 · BRAKE 0x300) — 라이트·구형은 protocol 이 바꿔 보낸다
     function led(mask) { state.ledSet(mask | 0); }
+    function ledRaw(v) { state.ledRawSet(v | 0); }   // 선생님 LED 점검용 — 기종 바이트에 그대로
     // 통일 신호 — kit.signal('success') 처럼. 이름이 없으면 아무것도 안 한다.
     function signal(name) {
       const sg = SIGNALS[name]; if (!sg) { console.warn('알 수 없는 신호:', name); return; }
@@ -357,9 +387,13 @@
     // ── 센서 수신 ─────────────────────────────────────────────────────
     function onFrame(f) {
       Object.assign(sensor, f);
-      lastRxAt = Date.now();
+      lastRxAt = Date.now(); rxFrames++;
       const b = $('kitBatt');
-      if (b && f.battery > 0) { b.style.display = ''; b.textContent = '🔋 ' + f.battery; b.classList.toggle('low', f.battery < BATT_LOW); }
+      if (b && f.battery > 0) {
+        const neo = P.getModel() === 'neo', pct = neo ? 0 : P.batteryPct(f.battery);
+        b.style.display = ''; b.textContent = '🔋 ' + (neo ? f.battery : pct + '%');
+        b.classList.toggle('low', neo ? f.battery < BATT_LOW : pct < BATT_LOW_PCT);
+      }
       if (typeof o.onSensor === 'function') { try { o.onSensor(sensor, api); } catch (e) { console.error(e); } }
     }
 
@@ -369,7 +403,7 @@
         const base = String(s).split(':')[0];
         noteReconnect(base);
         renderBar();
-        if (base === 'connected') { setStatus('🔗 연결됨 ✓', 'ok'); toast('로봇 연결됨'); }
+        if (base === 'connected') { setStatus('🔗 연결됨 ✓', 'ok'); toast('로봇 연결됨'); probeStart(); }
         else if (base === 'connecting') setStatus('🔗 연결 중…', 'pending');
         else if (base === 'reconnecting') setStatus('🔗 재연결 중…', 'pending');
         else if (base === 'disconnected') setStatus('🔗 연결 끊김', 'err');
@@ -482,7 +516,8 @@
       get connected() { return !!(transport && transport.connected); },
       get running() { return running; },
       sensorAge: () => (lastRxAt ? Date.now() - lastRxAt : Infinity),
-      drive, stop, hold, beep, beepOff, led, dot, run, abortRun: stop, signal,
+      drive, stop, hold, beep, beepOff, led, ledRaw, LED: P.LED, dot, run, abortRun: stop, signal,
+      get model() { return P.getModel(); },     // 'neo' | 'lite' | 'classic'
       block: (el) => { if (el) blockers.add(el); },
       isBlocked,
       store, team, record, share,
