@@ -80,7 +80,9 @@ if (!started) kit.toast('이미 움직이는 중이에요');
 | `kit.beep(code, ms=400)` | 부저. **ms 뒤 자동으로 꺼짐.** 코드는 실측된 8음만: 37도 39레 41미 42파 44솔 46라 48시 49높은도 |
 | `kit.beepOff()` | **소리만** 끈다(울리던 신호음 포함). 바퀴·불빛·실행은 그대로 — 누르는 동안 소리 나는 건반(t04 ③) 등 |
 | `kit.signal(name)` | **신호 사전**(05 §3). `success` `fail` `notice` `start` `caught`. 뜻이 있는 소리는 이걸로 |
-| `kit.led(mask)` | LED. 실측된 값은 **15 = 전방등**, 0 = 끔. 나머지 비트는 미실측(03 §6) |
+| `kit.led(mask)` | LED. 값은 **네오 뜻** — `kit.LED.HEAD`(3) 전조등 · `BACK`(12) 후진등 · `LEFT`(0xA0)·`RIGHT`(0x50) 깜빡이 · `BRAKE`(0x300) 브레이크, 15 = 전조등+후진등, 0 = 끔. 라이트·구형은 kit 이 바꿔 보낸다(PROTOCOL 부록 C) |
+| `kit.ledRaw(값)` | 선생님 LED 점검용 — 기종 바이트에 **바꾸지 않고** 그대로. `kit.led()`·`kit.stop()` 을 부르면 풀린다 |
+| `kit.model` | 연결된 로봇 기종 `'neo'`·`'lite'`·`'classic'`(읽기 전용). 이름으로 고르고, 답이 없으면 kit 이 다른 기종을 차례로 보내 본다 |
 | `kit.dot.number(n)` | 도트에 0~99 |
 | `kit.dot.bytes(rows)` | 8바이트 그림: 바이트=행(위→아래), 비트7=맨 왼쪽 |
 | `kit.dot.icon(name)` | `ok`✓ `no`✗ `ask`? `heart`♥ `smile`☺ |

@@ -73,7 +73,7 @@ class AltinoBle(
             "6e400003-b5a3-f393-e0a9-e50e24dcca9e", // Nordic UART RX
         ).map { it.lowercase() }
         private val NAME_PREFIXES = listOf(
-            "ALTINO-NEO", "ALTINO-LITE", "ALTINO-N", "ALTINO-L", "ALTINO", "SMARTFARM", "REALFARM"
+            "ALTINO-NEO", "ALTINO-LITE", "ALTINO-N", "ALTINO-L", "ALTINO", "RN4678", "RNBT", "SMARTFARM", "REALFARM"
         )
         private const val SCAN_MS = 10_000L      // 10초 후 자동 정지
         private const val SCAN_MIN_GAP = 6_000L  // startScan 최소 간격(30초/5회 스로틀 회피)
@@ -170,11 +170,14 @@ class AltinoBle(
     // 우리가 프레임을 계속 보내는 중(≤4초 내 송신)인데 8초 넘게 수신(notify)이 없으면 죽은 링크로 판정.
     @Volatile private var lastRxAt = 0L
     @Volatile private var lastTxAt = 0L
+    @Volatile private var rxEver = false
     private val liveness = object : Runnable {
         override fun run() {
             if (!isConnected) return
             val now = SystemClock.elapsedRealtime()
-            if (now - lastTxAt < 4_000L && now - lastRxAt > 8_000L) {
+            // 앱을 켠 뒤 한 바이트도 받은 적이 없으면 끊지 않는다 — 죽은 링크가 아니라 기종(프레임)이 안 맞는 것이다.
+            // 끊으면 '연결됨↔재연결'만 되풀이하고 그때마다 kit 의 기종 찾기가 처음부터 다시 돈다(캠프 앱 2026-11-17 실기).
+            if (rxEver && now - lastTxAt < 4_000L && now - lastRxAt > 8_000L) {
                 Log.w(TAG, "stale link (tx ok, no rx 8s) → force reconnect")
                 isConnected = false
                 closeGatt()
@@ -451,7 +454,7 @@ class AltinoBle(
 
     private fun emitData(v: ByteArray?) {
         val bytes = v ?: return
-        lastRxAt = SystemClock.elapsedRealtime()
+        lastRxAt = SystemClock.elapsedRealtime(); rxEver = true
         val b64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
         postToJs("window.__altinoOnData && window.__altinoOnData('$b64');")
     }

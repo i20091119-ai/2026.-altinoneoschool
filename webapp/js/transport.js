@@ -168,7 +168,12 @@ class AndroidBridgeTransport extends BaseTransport {
   state() { try { return JSON.parse(window.AltinoNative.getState() || '{}'); } catch (e) { return {}; } }
   // 연결된 로봇 이름으로 기종(네오/라이트)을 정한다 — 프레임 모양이 다르다(protocol.js)
   _syncModel() {
-    try { if (window.AltinoProtocol && window.AltinoProtocol.setModelFromName) window.AltinoProtocol.setModelFromName(this.state().name); } catch (e) {}
+    // 이 로봇에서 실제로 답이 온 기종을 적어 둔 게 있으면(kit 기종 찾기) 이름보다 그것을 따른다.
+    try {
+      const P = window.AltinoProtocol, st = this.state(); if (!P) return;
+      let saved = null; try { saved = localStorage.getItem('altino.model.' + (st.address || '')); } catch (e) {}
+      if (P.MODELS && P.MODELS.includes(saved)) P.setModel(saved); else P.setModelFromName(st.name);
+    } catch (e) {}
   }
   // 이미 연결된 네이티브 링크를 '입양'(재연결 없이 콜백만 재바인딩)
   adopt() { this._claim(); this.connected = true; this._syncModel(); this._emit('status', 'connected'); }
