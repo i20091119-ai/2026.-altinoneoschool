@@ -48,6 +48,7 @@ ok('바깥을 눌러도 닫힘', !(await p.isVisible('#recPop')));
 await p.evaluate(() => localStorage.setItem('altino.record', '망가짐')); await p.click('#recOpen'); await p.waitForTimeout(100);
 ok('망가진 기록이어도 열림(기록 0)', (await p.textContent('#recSum')).includes('0 / 15'));
 ok('브라우저에서는 🔄 업데이트 확인 버튼이 숨음', !(await p.isVisible('#updBtn')));
+ok('브라우저에서는 📥 앱(APK) 받기 링크(최신 Release)', await p.isVisible('#apkLink') && (await p.getAttribute('#apkLink', 'href')).endsWith('/releases/latest'));
 ok('무에러', errs.length === 0, errs.join(' | '));
 
 // 태블릿(APK) — 가짜 AltinoUpdate 로 업데이트 확인 흐름
@@ -67,6 +68,7 @@ await q.click('#updBtn'); await q.waitForTimeout(300);
 ok('누르면 새 버전 안내(메모는 글자 그대로)', (await q.textContent('#updOv')).includes('1.0.1030') && (await q.textContent('#updOv')).includes('<b>새 기능</b>'));
 await q.click('#uYes'); await q.waitForTimeout(100);
 ok('지금 업데이트 → 내려받기 시작', (await q.evaluate(() => window.__dl)) === 'https://x/a.apk');
+ok('태블릿 앱 안에서는 📥 링크 숨음', !(await q.isVisible('#apkLink')));
 ok('무에러(태블릿)', errs2.length === 0, errs2.join(' | '));
 console.log('──────────────'); console.log(`로봇학교 화면 시험: ${pass} 통과 / ${fail} 실패`);
 await br.close(); server.close(); process.exit(fail ? 1 : 0);
