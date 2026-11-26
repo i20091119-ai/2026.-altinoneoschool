@@ -46,7 +46,10 @@ await p.click('#lamps [data-id="head"]'); await p.waitForTimeout(250);
 ok('전조등 → LED 15', (await leds()).slice(-1)[0] === 15, JSON.stringify((await leds()).slice(-3)));
 ok('뜻이 보임', (await p.textContent('#meanBox')).includes('전조등'));
 await p.click('#lamps [data-id="left"]'); await p.waitForTimeout(250);
-ok('실측 안 된 등은 로봇을 켜지 않고 그림으로만', (await leds()).slice(-1)[0] === 0 && (await p.textContent('#meanBox')).includes('왼쪽'));
+ok('왼쪽 깜빡이 → 네오 왼쪽 깜빡이 값(0xA0)이 켜졌다 꺼졌다', (await leds()).slice(-3).includes(0xA0) && (await p.textContent('#meanBox')).includes('왼쪽'), JSON.stringify((await leds()).slice(-6)));
+await p.evaluate(() => window.__altinoKit.stop()); await p.waitForTimeout(200);   // 깜빡이 끝내기
+await p.click('#lamps [data-id="brake"]'); await p.waitForTimeout(250);
+ok('브레이크등 → 0x300', (await leds()).slice(-1)[0] === 0x300, JSON.stringify((await leds()).slice(-2)));
 await clearAll(); await p.click('#horn'); await p.waitForTimeout(200);
 ok('경적 = 실측 음 42', (await sounds()).includes(42));
 await clearAll(); await p.click('#sos'); await p.waitForTimeout(500);
