@@ -35,7 +35,7 @@ const store = (k) => p.evaluate((key) => JSON.parse(localStorage.getItem(key) ||
 const step = (n) => p.evaluate((k) => document.querySelector(`[data-step="${k}"]`).click(), n);
 
 const setS = (o) => p.evaluate((x) => { window.__S = x; }, o);
-const steers = () => p.evaluate(() => window.__txFrames.slice(-2).map(f => (f[5] << 24) >> 24));
+const steers = () => p.evaluate(() => window.__txFrames.slice(-2).map(f => (f[5] > 127 ? -(255 - f[5]) : f[5])));
 const clearAll = () => p.evaluate(() => { window.__tx.length = 0; window.__txFrames.length = 0; });
 const recs = () => p.evaluate(() => JSON.parse(localStorage.getItem('altino.record') || '[]'));
 const FAR = { ir1: 900, ir2: 900, ir3: 900, ir4: 900, ir5: 900, ir6: 900 };

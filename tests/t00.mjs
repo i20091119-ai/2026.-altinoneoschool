@@ -86,6 +86,25 @@ await p.evaluate(() => localStorage.setItem('altino.share.signals', JSON.stringi
 ok('kit.share: 읽기는 모든 앱, 없는 이름은 기본값', await p.evaluate(() => { const s = window.__altinoKit.share; return s.get('signals', {}).안녕[0] === 'ls' && s.get('nope', 7) === 7; }));
 await p.evaluate(() => localStorage.removeItem('altino.share.signals'));
 
+// kit 1.2 — 기종 찾기: 이름은 라이트인데 로봇이 네오 프레임에만 답하면 네오로 맞추고 로봇 주소별로 적어 둔다
+{
+  const c2 = await br.newContext({ viewport: { width: 1280, height: 800 } });
+  await c2.addInitScript(() => { window.__STUB_CFG = { connected: true, address: 'AA:BB:CC:DD:EE:99', name: 'ALTINO-LITE-X99' }; });
+  await c2.addInitScript(STUB);
+  await c2.addInitScript(() => { setInterval(() => window.__feed && window.__feed({}), 100); });   // 네오(54바이트)로만 답하는 로봇
+  const q = await c2.newPage(); const e2 = []; q.on('pageerror', e => e2.push(e.message));
+  await q.goto(BASE + `/${APP}.html`); await q.waitForTimeout(800);
+  const len = () => q.evaluate(() => window.__txFrames.at(-1).length);
+  ok('기종 찾기: 이름이 ALTINO-L… 이면 처음엔 라이트 22바이트', (await len()) === 22, String(await len()));
+  await q.waitForTimeout(3200);
+  ok('답이 없으면 다음 기종 → 네오 26바이트로 맞춤', (await len()) === 26 && (await q.evaluate(() => window.__altinoKit.model)) === 'neo', String(await len()));
+  ok('맞춘 기종을 로봇 주소별로 적어 둠', (await q.evaluate(() => localStorage.getItem('altino.model.AA:BB:CC:DD:EE:99'))) === 'neo');
+  await q.reload(); await q.waitForTimeout(800);
+  ok('다음엔 적어 둔 기종으로 바로(네오 26바이트)', (await len()) === 26);
+  ok('무에러(기종 찾기)', e2.length === 0, e2.join(' | '));
+  await c2.close();
+}
+
 // 망가진 저장값 방어 — store.num 이 범위로 자른다
 await p.evaluate((a) => localStorage.setItem(`altino.${a}.speed`, '"-999"'), APP);
 await p.reload(); await p.waitForTimeout(500);

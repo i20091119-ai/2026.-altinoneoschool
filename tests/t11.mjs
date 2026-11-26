@@ -31,7 +31,7 @@ await p.goto(BASE + `/${APP}.html`); await p.waitForTimeout(600);
 const tail = (n) => p.evaluate((k) => window.__tx.slice(-k), n);
 const clearTx = () => p.evaluate(() => { window.__tx.length = 0; window.__txFrames.length = 0; });
 const store = (k) => p.evaluate((key) => JSON.parse(localStorage.getItem(key) || 'null'), k);
-const steers = () => p.evaluate(() => window.__txFrames.map(f => (f[5] << 24) >> 24));
+const steers = () => p.evaluate(() => window.__txFrames.map(f => (f[5] > 127 ? -(255 - f[5]) : f[5])));
 const add = async (pre, b) => p.click(`#pal${pre} button[data-b="${b}"]`);
 const strip = (pre) => p.evaluate((x) => [...document.querySelectorAll(`#strip${x} button`)].map(b => b.textContent.replace(/^\d+/, '')).join(''), pre);
 const pick = (pre, i) => p.click(`#strip${pre} button[data-i="${i}"]`);

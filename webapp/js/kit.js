@@ -260,8 +260,8 @@
       const N = probe.order.length;
       if (!N || probe.stage >= N || !probe.at || !transport || !transport.connected || !T.AndroidBridgeTransport.supported) return;
       if (rxFrames > probe.base) {                  // 답이 왔다 → 이 기종이 맞다
-        const a = robotAddr(); if (a) raw.set('altino.model.' + a, P.getModel());
-        if (probe.stage > 0) toast('🔧 ' + P.modelLabel() + '로 맞췄어요');
+        // 처음 고른 기종(이름 규칙·적어 둔 값)이 맞았으면 적을 것이 없다. 다른 기종으로 맞췄을 때만 로봇 주소별로 적는다
+        if (probe.stage > 0) { const a = robotAddr(); if (a) raw.set('altino.model.' + a, P.getModel()); toast('🔧 ' + P.modelLabel() + '로 맞췄어요'); }
         probe.stage = N; return;
       }
       if (Date.now() - probe.at < PROBE_MS) return;

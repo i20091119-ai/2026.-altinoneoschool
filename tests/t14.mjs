@@ -29,7 +29,7 @@ await ctx.addInitScript(() => { setInterval(() => window.__feed && window.__feed
 await ctx.addInitScript(() => { if (!sessionStorage.getItem('t14init')) { sessionStorage.setItem('t14init', '1'); localStorage.setItem('altino.t14.calF', '400'); localStorage.setItem('altino.t14.calT', '400'); } });
 const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
 await p.goto(BASE + `/${APP}.html`); await p.waitForTimeout(600);
-const frames = () => p.evaluate(() => window.__txFrames.map(f => { const raw = (f[6] << 8) | f[7]; return [raw & 0x8000 ? -(0xFFFF - raw) : raw, f[5] > 127 ? f[5] - 256 : f[5]]; }));
+const frames = () => p.evaluate(() => window.__txFrames.map(f => { const raw = (f[6] << 8) | f[7]; return [raw & 0x8000 ? -(0xFFFF - raw) : raw, f[5] > 127 ? -(255 - f[5]) : f[5]]; }));
 const tail = (n) => p.evaluate((k) => window.__tx.slice(-k), n);
 const clearTx = () => p.evaluate(() => { window.__tx.length = 0; window.__txFrames.length = 0; });
 const store = (k) => p.evaluate((key) => JSON.parse(localStorage.getItem(key) || 'null'), k);
