@@ -37,6 +37,17 @@ const step = async (n) => { await p.click(`#steps [data-step="${n}"]`); await p.
 const blocks = async (s) => { for (const k of s) await p.click(`#palette button[data-k="${k}"]`); await p.waitForTimeout(100); };
 const clearProg = async () => { if (!(await p.isDisabled('#clear'))) { await p.click('#clear'); await p.click('#acYes'); await p.waitForTimeout(150); } };
 const waitIdle = async (ms) => p.waitForSelector('#runBtn', { state: 'visible', timeout: ms });
+let turnMsgs = [];
+// 실행하면서 꺾기 창이 뜰 때마다 '돌렸어요'(사람이 손으로 돌린 셈)
+const runTurning = async (ms) => {
+  await p.click('#runBtn'); const t0 = Date.now();
+  while (Date.now() - t0 < ms) {
+    if (await p.isVisible('#turnPop')) { turnMsgs.push(await p.textContent('#turnMsg')); await p.click('#turnDone'); }
+    if (await p.isVisible('#runBtn')) return;
+    await p.waitForTimeout(100);
+  }
+  throw new Error('실행이 끝나지 않음');
+};
 
 // ── ① 지도 읽기 ──────────────────────────────────────────────────
 ok('① 지도 읽기 퀴즈가 보임', await p.isVisible('#quizBox') && !(await p.isVisible('#codeBox')));
@@ -58,18 +69,24 @@ await blocks('HRFFH');
 await clearTx(); await p.click('#runBtn'); await p.waitForTimeout(700);
 ok('실행: 처음 1초(준비)는 움직이지 않음', (await tail(3)).every(v => v === 0), JSON.stringify(await tail(3)));
 ok('실행 중에는 블록을 못 바꿈', await p.isDisabled('#palette button[data-k="F"]') && await p.isVisible('#stopBtn'));
+await p.waitForSelector('#turnPop:not(.hidden)', { timeout: 8000 });
+ok('↱ 꺾기 블록 → 멈추고 "오른쪽으로 돌려주세요" 창(도움 그림)', (await p.textContent('#turnMsg')).includes('오른쪽으로 돌려주세요') && await p.isVisible('#turnPic svg'));
+await p.evaluate(() => { window.__tx.length = 0; }); await p.waitForTimeout(1000);
+ok('창이 떠 있는 동안 기다리며 움직이지 않음', (await p.evaluate(() => window.__tx.slice())).every(v => v === 0));
+await p.click('#turnDone');
 await waitIdle(15000); await p.waitForTimeout(200);
 const fr = await frames();
 ok('⬆ 앞으로 = 속도 300 · 조향 0', fr.some(([m, s]) => m === 300 && s === 0));
-ok('↱ 오른쪽 꺾기 = 속도 300 · 조향 127', fr.some(([m, s]) => m === 300 && s === 127));
+ok('꺾기에 조향을 쓰지 않음(손으로 돌림)', fr.every(([, s]) => s === 0), JSON.stringify(fr.filter(([, s]) => s)));
 ok('🚩 힌트 블록에서는 멈춤(2초 정지 구간)', fr.filter(([m]) => m === 0).length >= 30, String(fr.filter(([m]) => m === 0).length));
 ok('맞는 길이면 연습 1 완료', (await store('altino.t14.done') || {}).p1 === true && (await p.textContent('#say')).includes('도착'), await p.textContent('#say'));
 await p.click('#missions button:nth-child(2)'); await p.waitForTimeout(150);
 await clearProg(); await blocks('RFFH');
-await p.click('#runBtn'); await waitIdle(15000); await p.waitForTimeout(200);
+await runTurning(15000); await p.waitForTimeout(200);
 ok('🚩 가 모자라면 앱이 알려 줌', (await p.textContent('#say')).includes('모자라'), await p.textContent('#say'));
 await clearProg(); await blocks('LFH');
-await p.click('#runBtn'); await waitIdle(15000); await p.waitForTimeout(200);
+await runTurning(15000); await p.waitForTimeout(200);
+ok('↰ 꺾기 → "왼쪽으로 돌려주세요"', turnMsgs.at(-1).includes('왼쪽으로 돌려주세요'), turnMsgs.at(-1));
 ok('지도 밖으로 나가면 앱이 알려 줌', (await p.textContent('#say')).includes('지도 밖'), await p.textContent('#say'));
 await clearProg(); await blocks('FFFF');
 await clearTx(); await p.click('#runBtn'); await p.waitForTimeout(1700);
@@ -81,14 +98,14 @@ ok('멈춘 뒤 다시 움직이지 않음(S5)', (await tail(10)).every(v => v ==
 // ── ③ 탐험 시험 A: 📮 → 📚 → 🏥 ─────────────────────────────────
 await step(3);
 await clearProg(); await blocks('FFHRFFHFRFH');
-await p.click('#runBtn'); await waitIdle(25000); await p.waitForTimeout(200);
+await runTurning(25000); await p.waitForTimeout(200);
 ok('실행 뒤 기록원 판정 칸', await p.isVisible('#judgeBox') && (await p.textContent('#jq')).includes('경유지 1'), await p.textContent('#jq'));
 ok('판정 중에는 실행 버튼이 꺼짐', await p.isDisabled('#runBtn'));
 await p.click('#jO'); await p.click('#jO'); await p.click('#jO'); await p.waitForTimeout(150);
 let rec = await store('altino.record') || [];
 ok('세 곳 모두 ⭕ → 한 번에 성공 별 3, 보물 카드 3장', (await p.textContent('#stars')) === '⭐⭐⭐' && (await p.$$eval('#cards span.got', a => a.length)) === 3);
 ok('성장기록부에 한 줄(별 3)', rec.length === 1 && rec[0].app === APP && rec[0].stars === 3, JSON.stringify(rec));
-await p.click('#runBtn'); await waitIdle(25000); await p.waitForTimeout(200);
+await runTurning(25000); await p.waitForTimeout(200);
 await p.click('#jO'); await p.click('#jX'); await p.waitForTimeout(150);
 ok('한 곳만 ⭕ → 별 1, 낮은 별은 기록부에 다시 안 남음', (await p.textContent('#stars')) === '⭐' && ((await store('altino.record')) || []).length === 1);
 ok('실행 횟수 저장', (await store('altino.t14.tries')).A === 2, JSON.stringify(await store('altino.t14.tries')));
@@ -96,6 +113,7 @@ ok('실행 횟수 저장', (await store('altino.t14.tries')).A === 2, JSON.strin
 // ── 보정 · 처음부터 ──────────────────────────────────────────────
 await p.click('#calToggle'); await p.fill('#calF', '5000'); await p.press('#calF', 'Tab'); await p.waitForTimeout(100);
 ok('보정값은 0.4~2초로 제한해서 저장', (await store('altino.t14.calF')) === 2000);
+ok('꺾기 보정 칸은 없음(손으로 돌림)', !(await p.$('#calT')));
 await p.click('#resetAll'); await p.click('#acYes'); await p.waitForTimeout(200);
 ok('처음부터: 블록·기록은 지우고 기록부·보정값은 남김', (await store('altino.t14.prog')) === null && (await store('altino.t14.calF')) === 2000 && ((await store('altino.record')) || []).length === 1);
 const keys = await p.evaluate(() => Object.keys(localStorage));

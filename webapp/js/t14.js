@@ -1,7 +1,8 @@
 // t14 보물 지도 탐험 (27–28차시) — 기획서 docs/topics/t14.md
 // ① 지도 읽기(방위·지도 기호) → ② 경유지 1곳(출발 → 경유지 → 도착지) → ③ 탐험 시험(경유지 2곳 + 도착지, 기록원 판정, 보물 카드)
 // t11(순서대로 길 안내하기)의 블록 실행을 복사해 🚩 힌트 블록을 더했다. 🚩 = 그 자리에 멈추고 도트에 힌트 그림.
-// 회전 센서·자이로가 없어 '한 칸'·'꺾기'는 시간으로만 움직인다(10 §4) → 교사 보정값을 이 앱에 둔다(altino.t14.*).
+// 회전 센서·자이로가 없어 '한 칸'은 시간으로만 움직인다(10 §4) → 교사 보정값을 이 앱에 둔다(altino.t14.calF).
+// ❗ 꺾기(↰ ↱)는 격자 칸 안에서 조향으로 못 돌아서 사람이 손으로 돌린다 — t11 과 같은 창(2026-11-26, 저자 요청).
 'use strict';
 (function () {
   const $ = (id) => document.getElementById(id);
@@ -16,13 +17,11 @@
   });
 
   const SPEED = 300;                     // 순항 (03 §1)
-  const STEER = 127;                     // 꺾기 — 최대 조향 (03 §1)
   const PAUSE = 300;                     // 블록 사이 쉼
   const HINT_MS = 2000;                  // 🚩 힌트 블록에서 멈춰 있는 시간
   const MAX_BLOCKS = 12;
   const N = 4;                           // 지도 4×4
   let FWD_MS = kit.store.num('calF', 1000, 400, 2000);   // 블록당 1초(설계원리서 P10 과 같은 규칙) — 현장 보정
-  let TURN_MS = kit.store.num('calT', 1000, 400, 2500);  // ⚠ 실측 전 기본값 — 90° 가 되게 현장에서 맞춘다
   const BLOCKS = {
     F: { icon: '⬆', name: '앞으로' },
     L: { icon: '↰', name: '왼쪽 꺾기' },
@@ -266,11 +265,11 @@
           if (!await r.sleep(HINT_MS)) return;
           continue;
         }
-        $('say').textContent = `${i + 1}번 블록: ${BLOCKS[b].name}`;
-        const ms = b === 'F' ? FWD_MS : TURN_MS;
+        $('say').textContent = `${i + 1}번 블록: ${BLOCKS[b].name}` + (b !== 'F' ? ' — 손으로 돌려요' : '');
+        if (b !== 'F') { if (!await askTurn(r, b)) return; continue; }
         const t0 = performance.now();
-        while (performance.now() - t0 < ms) {
-          r.drive(SPEED, b === 'L' ? -STEER : b === 'R' ? STEER : 0);
+        while (performance.now() - t0 < FWD_MS) {
+          r.drive(SPEED, 0);
           if (!await r.sleep(50)) return;
         }
         r.drive(0, 0);
@@ -281,10 +280,38 @@
     if (!ok) kit.toast('이미 움직이는 중이에요');
   };
   $('stopBtn').onclick = () => { kit.stop(); endRun(); };
+
+  // ── 꺾기 = 손으로 (t11 과 같은 창) ─────────────────────────────────
+  function turnSvg(b) {
+    const car = (op) => `<g opacity="${op}"><rect x="74" y="66" width="52" height="76" rx="14" fill="#ffd35c" stroke="#5a3200" stroke-width="3"/>`
+      + `<rect x="84" y="74" width="32" height="18" rx="5" fill="#8fd3ff" stroke="#5a3200" stroke-width="2"/>`
+      + `<circle cx="84" cy="66" r="4" fill="#fff" stroke="#5a3200" stroke-width="2"/><circle cx="116" cy="66" r="4" fill="#fff" stroke="#5a3200" stroke-width="2"/></g>`;
+    const body = `<rect x="16" y="16" width="168" height="168" rx="12" fill="#fffdf8" stroke="#e0d2bc" stroke-width="4" stroke-dasharray="10 8"/>`
+      + `<g transform="rotate(-90 100 104)">${car(0.22)}</g>${car(1)}`
+      + `<path d="M150 64 A62 62 0 0 0 54 58" fill="none" stroke="#ff7a86" stroke-width="9" stroke-linecap="round"/>`
+      + `<path d="M40 50 L66 48 L52 72 Z" fill="#ff7a86"/>`;
+    const hand = `<text x="${b === 'R' ? 42 : 158}" y="170" font-size="34" text-anchor="middle">🤚</text>`;
+    return `<svg viewBox="0 0 200 200" width="200" height="200" aria-hidden="true">`
+      + (b === 'R' ? `<g transform="translate(200 0) scale(-1 1)">${body}</g>` : body) + hand + `</svg>`;
+  }
+  let turned = false;
+  kit.block($('turnPop'));                // 창이 떠 있는 동안 바퀴는 못 움직인다(S2)
+  const hideTurn = () => $('turnPop').classList.add('hidden');
+  async function askTurn(r, b) {
+    r.drive(0, 0);
+    $('turnPic').innerHTML = turnSvg(b);
+    $('turnMsg').textContent = b === 'L' ? '알티노를 왼쪽으로 돌려주세요.' : '알티노를 오른쪽으로 돌려주세요.';
+    turned = false; $('turnPop').classList.remove('hidden'); kit.signal('notice');
+    while (!turned) { if (!await r.sleep(100)) { hideTurn(); return false; } }
+    hideTurn(); $('say').textContent = '손을 떼요…';
+    return r.sleep(800);                 // 손을 로봇에서 뗄 시간 (05 §7)
+  }
+  $('turnDone').onclick = () => { turned = true; };
+  $('turnStop').onclick = () => { hideTurn(); kit.stop(); endRun(); };
   function markNow(i) { [...$('prog').querySelectorAll('span')].forEach((s, j) => s.classList.toggle('now', j === i)); }
 
   function endRun() {
-    markNow(-1);
+    hideTurn(); markNow(-1);
     if (phase === 'finished') { afterRun(); return; }
     if (phase === 'running') { phase = 'idle'; $('say').textContent = '멈췄어요. 🏠 출발 칸에 북쪽을 보게 놓고 다시 실행해요.'; }
     render();
@@ -335,10 +362,9 @@
   }
 
   // ── 보정 (교사용) · 처음부터 ─────────────────────────────────────
-  $('calF').value = FWD_MS; $('calT').value = TURN_MS;
+  $('calF').value = FWD_MS;
   $('calToggle').onclick = () => $('calBox').classList.toggle('hidden');
   $('calF').addEventListener('change', () => { FWD_MS = Math.max(400, Math.min(2000, Math.round(+$('calF').value || 1000))); $('calF').value = FWD_MS; kit.store.set('calF', FWD_MS); });
-  $('calT').addEventListener('change', () => { TURN_MS = Math.max(400, Math.min(2500, Math.round(+$('calT').value || 1000))); $('calT').value = TURN_MS; kit.store.set('calT', TURN_MS); });
   $('resetAll').onclick = async () => {
     if (phase === 'running') return;
     if (!await kit.confirm({ title: '처음부터 할까요?', lines: ['지도 읽기·블록·보물 카드가 지워져요.', '성장기록부와 보정값은 남아요.'], okText: '네, 처음부터', danger: true })) return;
